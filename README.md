@@ -1,60 +1,92 @@
-# Namma Metro
-
-A playable first-person evening commute through a compact, stylized Bengaluru. Ride inside a metro coach, watch the city become a tunnel, and step onto station platforms. No backend, accounts, or remote game assets.
-
+# Namma Metro — Driver Simulator
 Live: https://namma-metro-1a93.vercel.app
 
-## Run locally
+Drive the complete Purple Line from **Whitefield (Kadugodi) to Challaghatta**, serving **all 37 consecutive stations**. A seated cab view looks down the rails, with a driver dashboard, speedometer, next-stop display, door lamps, ATP indicator, and master controller. Built with Vite, TypeScript, React, React Three Fiber, and Three.js. The passenger coach and platform-roaming game have been replaced.
 
-Node.js 20.19+ (or 22.12+).
+## Run
+
+Use Node.js 22.12+ (or 20.19+).
 
 ```sh
 npm install
 npm run dev
-```
-
-Open the Vite URL (normally http://localhost:5173).
-
-```sh
+npm test
 npm run build
 npm run preview
 ```
 
-## Play & controls
+## Drive a duty
 
-- Click **Step into the evening / Look around** to capture the mouse. Mouse looks around the coach or platform.
-- **Esc** releases the mouse and pauses the ride. Click **Resume & look around** to resume.
-- **WASD** walks on the platform while the mouse is captured. Platform movement is bounded away from the tracks.
-- **E**, or the **Explore platform / Board the coach** button, exits or enters while doors are open. This is an assisted transfer to/from the door, so you do not need to locate the doorway with the camera.
-- **Depart for next stop** starts a hop. Board first if you are on the platform. Doors close, the train accelerates, coasts, brakes, and opens its doors at arrival.
-- **M** or the sound button toggles audio. Audio starts after an interaction. Rumble and chimes use Web Audio; the PA stub uses browser speech synthesis when available.
-- Use **Purple Line / Green Line** in the menu to switch at any time. Switching restarts that line at its first playable station. Completed-hop discovery is retained for this session.
-- Ride one hop on each line to complete the small discovery objective. Continue to the end of either sequence, then choose the other line or restart using its tab.
-- Leaving the browser tab pauses the journey.
+1. Select **Purple · Begin duty**. The train starts at Whitefield with its doors open.
+2. Allow five seconds for passengers to board. Press **D** to close the doors.
+3. Hold **W / Up** to accelerate. Release to coast. Hold **S / Down** to brake. Maximum speed is 80 km/h.
+4. Use the distance and braking-distance guide to stop within **8 metres** of the next platform marker. Press **D** to open the doors; the train must be completely stationary.
+5. Wait for boarding, close the doors, and repeat. Every station must be served in order.
+6. Boarding at Challaghatta completes the duty and shows time, stops, and total passengers boarded. Restart from the summary.
 
-## Shipped routes
+**Space:** emergency brake. **M:** mute. **Esc:** pause/resume. Drag the windscreen for limited seated head movement (no pointer lock or walking). The dashboard Power/Coast/Brake buttons latch their selected setting; keyboard controls return to coast on release. Switching browser tabs or losing focus pauses the duty and clears traction. Resume from the overlay.
 
-**Purple:** Indiranagar → Halasuru → Trinity → Mahatma Gandhi Road → Cubbon Park. Elevated until the approach to underground Cubbon Park. Map context: Whitefield (Kadugodi) ↔ Challaghatta.
+The stylized **ATP station protection** automatically intervenes if the train approaches an unserved station too quickly. It brakes continuously before the marker: no arrival teleport, reverse recovery, skipped stops, or automatic departure. Manual braking remains available at all times. Doors lock traction, and a completed boarding cycle is required before departure. Passenger totals cannot be increased by repeatedly toggling doors.
 
-**Green:** Nadaprabhu Kempegowda Stn., Majestic → Chickpete → Krishna Rajendra Market → National College. Underground until the approach to elevated National College. Map context: Madavara ↔ Silk Institute. Majestic signage identifies the Purple/Green interchange.
+## Shipped Purple Line
 
-Names and sequences follow the supplied route bible (19 September 2026). Distances are illustrative 1.1–1.3 km hops, not surveyed operational distances. Trips take 66–78 seconds per hop, including 12-second acceleration and braking phases. Doors remain open until you choose to depart. The setting is deliberately compact, not a map-accurate recreation. Kannada boards depend on installed system glyph support. Desktop keyboard/mouse and WebGL are required; mobile polish is out of scope.
+1. Whitefield (Kadugodi)
+2. Hopefarm Channasandra
+3. Kadugodi Tree Park
+4. Pattandur Agrahara
+5. Sri Sathya Sai Hospital
+6. Nallurhalli
+7. Kundalahalli
+8. Seetharamapalya
+9. Hoodi
+10. Garudacharpalya
+11. Singayyanapalya
+12. Krishnarajapura (KR Pura)
+13. Benniganahalli
+14. Baiyappanahalli — at-grade
+15. Swami Vivekananda Road
+16. Indiranagar
+17. Halasuru
+18. Trinity
+19. Mahatma Gandhi Road
+20. Cubbon Park — underground
+21. Dr. B.R. Ambedkar Stn., Vidhana Soudha — underground
+22. Sir M. Visvesvaraya Stn., Central College — underground
+23. Nadaprabhu Kempegowda Stn., Majestic — underground; Green interchange signage
+24. Krantivira Sangolli Rayanna Railway Station — underground
+25. Magadi Road
+26. Sri Balagangadharanatha Swamiji Stn., Hosahalli
+27. Vijayanagara
+28. Attiguppe
+29. Deepanjali Nagar
+30. Mysuru Road
+31. Pantharapalya–Nayandahalli
+32. Rajarajeshwari Nagar
+33. Jnanabharathi
+34. Pattanagere
+35. Kengeri Bus Terminal
+36. Kengeri
+37. Challaghatta
 
-## Stack & files
+All other stations are elevated. Station order follows the supplied brief; every hop is an illustrative 1.2 km, totaling 43.2 km. A duty takes approximately 50 minutes depending on driving. Green Line is not playable.
 
-Vite + TypeScript + React + React Three Fiber + drei + three. Procedural geometry and canvas signage; synthesized audio. Optional Google Fonts enhance the interface, with system fallbacks.
+## World and performance
 
-- `src/main.tsx` — journey state, controls, HUD, line selection, discovery objective
-- `src/World.tsx` — first-person camera, coach, sliding door, station, city/tunnel scenery
-- `src/routes.ts` — locked routes and acceleration/coast/braking calculation
-- `src/audio.ts` — rumble, chime, spoken PA stub
-- `src/style.css` — responsive interface
-- `vite.config.ts`, `tsconfig.json`, `package.json` — build configuration
+Procedural evening Bengaluru: Purple bilingual station boards, platform passengers who move toward the train during boarding, trees, buildings, roadside coffee boards, and vehicles below the viaduct. Ground rises around Baiyappanahalli. The Cubbon Park–KSR stretch has enclosed tunnel walls, station boxes, cooler light, and shorter visibility. Layouts, grades, distances, and ATP behavior are illustrative, not surveyed infrastructure or operational training.
 
-Model: gpt-6-astra. No GitHub remote or deployment is created by this project.
+Only nine nearby scenery chunks and stations within 650 m are mounted. The camera stays local while the world advances according to continuous physical distance; route length does not multiply the rendered scene. Pixel ratio is capped at 1.5. Geometry, signs, and sound are generated locally, without remote model/font services. Kannada glyph quality depends on installed fonts. Desktop keyboard/mouse and WebGL are recommended; dashboard buttons also support touch.
 
-## Validation
+## Code and verification
 
-`npm test` checks the exact station sequences, underground transitions, and continuous acceleration/coast/braking progress across all seven hops. `npm run build` passes TypeScript and produces the static `dist/` bundle. Three.js produces a non-fatal large-chunk warning.
+- `src/routes.ts` — complete station order, Kannada labels, spacing, terrain
+- `src/simulation.ts` — pure deterministic physics, boarding, station protection, terminal state
+- `src/main.tsx` — input, fixed-step loop, selection, HUD, pause and summary
+- `src/World.tsx` — cab viewpoint, nearby platforms, city, tunnel, limited head movement
+- `src/audio.ts` — synthesized motor rumble and door chimes
+- `tests/routes.test.cjs` — exact sequence, terrain, interlocks, controls, and complete 37-stop drive
 
-The implementation environment prohibits listening/browser sockets (`EPERM`), so a browser playthrough and screenshot could not be completed there. Run locally to verify pointer lock, WebGL visuals, and audio on your browser. Node 22.12+ is recommended to satisfy all transitive package engine declarations (the build also passed on Node 20.19.2).
+`npm test` passes all five assertions suites, including a simulated end-to-end duty proving bounded continuous movement, no skipped stops, one boarding event per station, and terminal completion. `npm run build` passes TypeScript and Vite; Vite reports a non-fatal Three.js chunk-size warning.
+
+Browser verification could not run in this environment: Vite's listening socket is denied (`EPERM`), and `agent-browser` is unavailable. Visual appearance, interactive browser input, audio, and measured frame rate therefore still need local playtesting.
+
+Model: **gpt-6-astra**. No GitHub remote was created, no git push was run, and no deployment was made. Operator handles publishing.

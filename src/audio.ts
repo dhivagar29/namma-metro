@@ -7,7 +7,7 @@ class MetroAudio {
   const osc = ctx.createOscillator(); osc.type = 'sawtooth'; osc.frequency.value = 48;
   const filter = ctx.createBiquadFilter(); filter.type = 'lowpass'; filter.frequency.value = 160; osc.connect(filter); filter.connect(this.rumble); osc.start();
  }
- setMute(value: boolean) { this.muted = value; if (this.gain && this.ctx) this.gain.gain.setTargetAtTime(value ? 0 : .18, this.ctx.currentTime, .05); if (value) speechSynthesis.cancel(); }
+ setMute(value: boolean) { this.muted = value; if (this.gain && this.ctx) this.gain.gain.setTargetAtTime(value ? 0 : .18, this.ctx.currentTime, .05); if (value && 'speechSynthesis' in window) speechSynthesis.cancel(); }
  speed(value: number) { if(this.rumble && this.ctx) this.rumble.gain.setTargetAtTime(.03 + value * .7, this.ctx.currentTime, .3); }
  chime(station?: string) {
   this.start(); const ctx = this.ctx!;

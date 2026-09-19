@@ -1,68 +1,117 @@
-import { useEffect, useMemo, useRef } from 'react';
+import { memo, useEffect, useMemo, useRef, useState, type MutableRefObject } from 'react';
 import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { PointerLockControls } from '@react-three/drei';
 import * as THREE from 'three';
-import { routes, type Line } from './routes';
-export type SceneState = { line: Line; index: number; progress: number; speed: number; traveling: boolean; platform: boolean; paused: boolean; doors: boolean };
-function Box({ p, s, color, metal = false }: { p: [number,number,number]; s: [number,number,number]; color: string; metal?: boolean }) { return <mesh position={p}><boxGeometry args={s}/><meshStandardMaterial color={color} roughness={metal ? .3 : .8} metalness={metal ? .65 : .05}/></mesh>; }
-function Sign({ text, sub = '', p, width = 3.2, color = '#5b326f', rotation = 0 }: {text:string;sub?:string;p:[number,number,number];width?:number;color?:string;rotation?:number}) {
- const texture = useMemo(() => { const c = document.createElement('canvas'); c.width=1536;c.height=256;const x=c.getContext('2d')!;x.fillStyle=color;x.fillRect(0,0,c.width,c.height);x.fillStyle='#ffffff';x.textAlign='center';x.font=`bold ${text.length>32?43:64}px sans-serif`;x.fillText(text,768,108);x.font='35px sans-serif';x.fillText(sub,768,183);const t=new THREE.CanvasTexture(c);t.colorSpace=THREE.SRGBColorSpace;return t; },[text,sub,color]);
- useEffect(()=>()=>texture.dispose(),[texture]);
- return <mesh position={p} rotation={[0,rotation,0]}><planeGeometry args={[width,width/6]}/><meshBasicMaterial map={texture} side={THREE.DoubleSide}/></mesh>;
+import { kannada, stations, stationPosition } from './routes';
+import type { Simulation } from './simulation';
+type Props = { simulation: MutableRefObject<Simulation>; paused: boolean };
+function Box({ p, s, color }: { p: [number, number, number]; s: [number, number, number]; color: string }) {
+ return <mesh position={p}><boxGeometry args={s}/><meshStandardMaterial color={color} roughness={.8}/></mesh>;
 }
-function Pole({x,z}:{x:number;z:number}) {return <mesh position={[x,1.65,z]}><cylinderGeometry args={[.035,.035,3.1,12]}/><meshStandardMaterial color="#c2c9c7" metalness={.9} roughness={.22}/></mesh>}
-function Coach({state}:{state:SceneState}) {
- const door=useRef<THREE.Group>(null); const r=routes[state.line];
- useFrame((_,dt)=>{if(door.current) door.current.position.z=THREE.MathUtils.damp(door.current.position.z,state.doors?1.6:0,4,dt)});
- return <group>
- <Box p={[0,-.13,0]} s={[3.7,.25,19]} color="#67767a"/><Box p={[0,3.3,0]} s={[3.7,.18,19]} color="#e2e3d8"/>
- {[-1,1].map(side=><group key={side}>
- <Box p={[side*1.85,.42,0]} s={[.12,.85,19]} color="#bcc7c7"/><Box p={[side*1.85,2.9,0]} s={[.14,.7,19]} color="#d4dbd5"/>
- {[-7,-3.7,3.7,7].map(z=><group key={z}>
- <Box p={[side*1.85,1.7,z]} s={[.12,1.8,.15]} color="#d8ded9"/>
- <Box p={[side*1.85,2.52,z+1.55]} s={[.16,.1,2.9]} color="#637d80"/>
- <Box p={[side*1.85,.97,z+1.55]} s={[.16,.1,2.9]} color="#637d80"/>
- </group>)}
- {[-6,-3.4,3.4,6].map(z=><group key={z}><Box p={[side*1.48,.51,z]} s={[.62,.18,2.2]} color={state.line==='purple'?'#7975a1':'#568b7c'}/><Box p={[side*1.73,.89,z]} s={[.16,.72,2.2]} color={state.line==='purple'?'#9290b2':'#71a38e'}/><Box p={[side*1.45,.22,z]} s={[.12,.48,1.7]} color="#8c9898" metal/></group>)}
- <Box p={[side*1.85,1.5,-1.18]} s={[.13,2.95,.12]} color="#d3d9d5"/><Box p={[side*1.85,1.5,1.18]} s={[.13,2.95,.12]} color="#d3d9d5"/>
- </group>)}
- <group ref={door}><Box p={[1.84,1.45,0]} s={[.08,2.8,2.2]} color="#aabbbd"/><Sign text="← DOORS →" sub="Mind the gap" p={[1.79,1.9,0]} width={1.6} rotation={-Math.PI/2} color="#263a43"/></group>
- <Box p={[-1.84,1.45,0]} s={[.08,2.8,2.2]} color="#9bacad"/>
- {[-6,-2,2,6].map(z=><group key={z}><Pole x={.72} z={z}/><Pole x={-.72} z={z}/>{[-1,1].map(x=><mesh key={x} position={[x*.72,2.63,z+.65]}><torusGeometry args={[.115,.025,8,16]}/><meshStandardMaterial color="#dcce98"/></mesh>)}</group>)}
- {[-1,1].map(x=><Box key={x} p={[x*.9,3.17,0]} s={[.12,.03,18]} color="#fff2c8"/>)}
- <Box p={[0,1.6,-9.4]} s={[3.7,3.2,.15]} color="#c8d0ce"/><Box p={[0,1.4,-9.28]} s={[1,2.5,.08]} color="#697f82"/>
- <Sign text="NAMMA METRO" sub={r.name+' • '+r.terminals} p={[0,2.65,-9.18]} width={3.2} color={r.color}/>
- <Sign text={r.stations.join('  •  ')} sub="● ━━━ ● ━━━ ● ━━━ ●    ನಮ್ಮ ಮೆಟ್ರೋ" p={[0,2.94,-5.3]} width={3.3} color={state.line==='purple'?'#644482':'#316c58'}/>
- </group>
+function Sign({ text, sub, p, width = 8 }: { text: string; sub: string; p: [number, number, number]; width?: number }) {
+ const texture = useMemo(() => {
+  const canvas = document.createElement('canvas'); canvas.width = 1536; canvas.height = 256;
+  const ctx = canvas.getContext('2d')!; ctx.fillStyle = '#652b87'; ctx.fillRect(0, 0, 1536, 256);
+  ctx.fillStyle = '#fff'; ctx.textAlign = 'center'; ctx.font = `600 ${text.length > 36 ? 38 : 58}px sans-serif`; ctx.fillText(text, 768, 110);
+  ctx.font = '38px sans-serif'; ctx.fillText(sub, 768, 187);
+  const result = new THREE.CanvasTexture(canvas); result.colorSpace = THREE.SRGBColorSpace; return result;
+ }, [text, sub]);
+ useEffect(() => () => texture.dispose(), [texture]);
+ return <mesh position={p}><planeGeometry args={[width, width / 6]}/><meshBasicMaterial map={texture} side={THREE.DoubleSide}/></mesh>;
 }
-function Environment({state}:{state:SceneState}) {
- const r=routes[state.line];const underground=state.traveling ? (state.progress>.55?r.underground[state.index+1]:r.underground[state.index]) : r.underground[state.index];
- const scenery=useRef<THREE.Group>(null);
- useFrame((_,dt)=>{if(scenery.current)scenery.current.position.z=(scenery.current.position.z+dt*state.speed*21)%16;});
+const Station = memo(function Station({ index, simulation }: { index: number; simulation: MutableRefObject<Simulation> }) {
+ const crowd = useRef<THREE.Group>(null);
+ useFrame(() => {
+  if (!crowd.current) return;
+  const state = simulation.current;
+  const boarding = state.target === index && state.doors;
+  crowd.current.visible = state.stops <= index;
+  crowd.current.scale.x = boarding ? Math.max(.55, 1 - state.dwell * .09) : 1;
+ });
+ const underground = index >= 19 && index <= 23;
+ return <group position={[0, 0, -stationPosition(index)]}>
+  {[-1, 1].map(side => <group key={side}>
+   <Box p={[side * 6, .1, 40]} s={[7, .8, 140]} color="#a5aaa9"/>
+   <Box p={[side * 2.65, .52, 40]} s={[.22, .04, 140]} color="#e4b85d"/>
+   <Box p={[side * 6, 6.6, 40]} s={[8.5, .25, 146]} color={underground ? '#5f6976' : '#b1b7b4'}/>
+   {[-24, 0, 24, 48, 72, 96].map(z => <group key={z}>
+    <Box p={[side * 7.5, 3.5, z]} s={[.55, 6, .6]} color="#bec5c3"/>
+    <Box p={[side * 7.5, 2.1, z]} s={[.58, .5, .63]} color="#8646a9"/>
+    <Box p={[side * 5, 6.4, z]} s={[.2, .04, 8]} color="#f6ecd5"/>
+    <Sign text={stations[index]} sub={kannada[index]} p={[side * 6.4, 4.7, z + .4]} width={6.4}/>
+   </group>)}
+   {side === 1 && <group ref={crowd}>{[12, 20, 31, 42, 51, 69, 79].map((z, i) => <group key={z} position={[side * (3.7 + i % 2), .52, z]}>
+    <Box p={[0, .9, 0]} s={[.48, .85, .3]} color={['#dda264', '#719d9e', '#9d739e'][i % 3]}/>
+    <mesh position={[0, 1.55, 0]}><sphereGeometry args={[.19, 8, 8]}/><meshStandardMaterial color="#986b4b"/></mesh>
+    <Box p={[-.13, .25, 0]} s={[.14, .5, .2]} color="#343c4c"/><Box p={[.13, .25, 0]} s={[.14, .5, .2]} color="#343c4c"/>
+   </group>)}</group>}
+  </group>)}
+  <Sign text={index === 22 ? 'MAJESTIC  ↔  GREEN LINE' : 'ನಮ್ಮ ಮೆಟ್ರೋ  ·  NAMMA METRO'} sub="WESTBOUND   /   CHALLAGHATTA" p={[0, 7, -25]} width={15}/>
+  <Box p={[0, 6.2, -25]} s={[20, .16, .4]} color="#657472"/>
+  <Box p={[0, .035, 0]} s={[2, .06, .35]} color="#f4d06c"/>
+  <Sign text="S" sub="STOP" p={[2, 1.5, -2]} width={.9}/>
+ </group>;
+});
+const CityChunk = memo(function CityChunk({ n }: { n: number }) {
+ const z = -n * 80;
+ const underground = n * 80 >= 19 * 1200 - 500 && n * 80 <= 23 * 1200 + 500;
+ if (underground) return <group position={[0, 0, z]}>
+  <Box p={[-11, 4, 0]} s={[.5, 10, 80]} color="#29353f"/><Box p={[11, 4, 0]} s={[.5, 10, 80]} color="#29353f"/>
+  <Box p={[0, 8.6, 0]} s={[22, .5, 80]} color="#28333e"/>
+  {[-30, -10, 10, 30].map(k => <group key={k}><Box p={[-10.6, 5, k]} s={[.08, .15, 6]} color="#b2e8f1"/><Box p={[10.6, 5, k]} s={[.08, .15, 6]} color="#b2e8f1"/><Box p={[-10.5, 4, k]} s={[.3, 9, .3]} color="#4a5661"/></group>)}
+ </group>;
+ const gradeLift = Math.max(0, 1 - Math.abs(n * 80 - 13 * 1200) / 600) * 9;
+ return <group position={[0, gradeLift, z]}>
+  <Box p={[0, -10, 0]} s={[180, .5, 80]} color="#6e7d69"/>
+  <Box p={[17, -9.7, 0]} s={[13, .1, 80]} color="#5d6263"/>
+  <Box p={[17, -9.6, 0]} s={[.2, .02, 65]} color="#d4cbb3"/>
+  <Box p={[0, -5, 0]} s={[1.8, 9, 2]} color="#94958e"/>
+  {[-1, 1].map(side => <group key={side}>
+   <Box p={[side * (30 + n % 3 * 5), -2, 0]} s={[12, 15 + n % 4 * 5, 22]} color={['#bab3a2', '#999f9b', '#bdac98', '#9fa8ab'][Math.abs(n) % 4]}/>
+   {[0, 1, 2, 3].map(i => <Box key={i} p={[side * (30 + n % 3 * 5), i * 3 - 4, 11.1]} s={[10, 1.1, .05]} color="#6e8287"/>)}
+   {[-24, 20].map(k => <group key={k}><Box p={[side * 12, -6, k]} s={[.5, 6, .5]} color="#7c715e"/><mesh position={[side * 12, -2.5, k]}><icosahedronGeometry args={[4.2, 1]}/><meshStandardMaterial color="#4f7961"/></mesh></group>)}
+  </group>)}
+  <Box p={[14, -8.9, n % 3 * 15]} s={[1.8, 1.5, 3.4]} color="#d9b33e"/><Box p={[20, -8.9, -20]} s={[2, 1.3, 4]} color="#8b4456"/>
+  {n % 3 === 0 && <Sign text={n % 2 === 0 ? 'ಬೆಂಗಳೂರು · BENGALURU' : 'FILTER COFFEE  /  ದರ್ಶಿನಿ'} sub={n % 2 === 0 ? 'THE GARDEN CITY' : 'A little break in a busy city'} p={[-24, 6, 12]} width={13}/>}
+ </group>;
+});
+function Scenery({ simulation, paused }: Props) {
+ const moving = useRef<THREE.Group>(null), railBed = useRef<THREE.Group>(null);
+ const [chunk, setChunk] = useState(0);
+ const { camera, gl, scene } = useThree();
+ const look = useRef({ x: 0, y: 0, dragging: false });
+ useEffect(() => {
+  const canvas = gl.domElement;
+  const down = (e: PointerEvent) => { look.current.dragging = true; canvas.setPointerCapture(e.pointerId); };
+  const up = () => { look.current.dragging = false; };
+  const move = (e: PointerEvent) => { if (look.current.dragging && !paused) { look.current.x = THREE.MathUtils.clamp(look.current.x - e.movementX * .0015, -.24, .24); look.current.y = THREE.MathUtils.clamp(look.current.y - e.movementY * .001, -.12, .1); } };
+  canvas.addEventListener('pointerdown', down); canvas.addEventListener('pointerup', up); canvas.addEventListener('pointermove', move); canvas.addEventListener('lostpointercapture', up);
+  return () => { canvas.removeEventListener('pointerdown', down); canvas.removeEventListener('pointerup', up); canvas.removeEventListener('pointermove', move); canvas.removeEventListener('lostpointercapture', up); };
+ }, [gl, paused]);
+ useFrame((_, dt) => {
+  const position = simulation.current.position;
+  if (moving.current) moving.current.position.z = position;
+  if (railBed.current) railBed.current.position.z = position % 4;
+  const nextChunk = Math.floor(position / 80); if (nextChunk !== chunk) setChunk(nextChunk);
+  camera.rotation.order = 'YXZ'; camera.rotation.y = THREE.MathUtils.damp(camera.rotation.y, look.current.x, 8, dt); camera.rotation.x = THREE.MathUtils.damp(camera.rotation.x, -.035 + look.current.y, 8, dt);
+  const under = position >= 19 * 1200 - 500 && position <= 23 * 1200 + 500;
+  const color = new THREE.Color(under ? '#17232f' : '#d9c0a5');
+  (scene.background as THREE.Color).lerp(color, Math.min(1, dt * 2));
+  if (scene.fog instanceof THREE.Fog) { scene.fog.color.copy(scene.background as THREE.Color); scene.fog.far = under ? 160 : 460; }
+ });
+ const underground = chunk * 80 >= 19 * 1200 - 500 && chunk * 80 <= 23 * 1200 + 500;
+ const nearby = stations.map((_, i) => i).filter(i => Math.abs(stationPosition(i) - chunk * 80) < 650);
  return <>
- <color attach="background" args={[underground?'#18272e':'#d6b597']}/><fog attach="fog" args={[underground?'#18272e':'#d6b597',18,100]}/>
- <ambientLight intensity={underground?.9:1.3} color={underground?'#a8d2dc':'#ffe2b6'}/><directionalLight position={[-8,12,-15]} intensity={underground?.3:2.5} color="#ffd29f"/>
- <pointLight position={[0,2.8,-3]} intensity={22} distance={16} color={underground?'#d2f6ff':'#fff0cf'}/>
- <Box p={[0,-1,0]} s={[8,1,240]} color="#505e60"/>
- <group ref={scenery}>
- {Array.from({length:20},(_,i)=>{const z=(i-12)*16;return underground?<group key={i}><Box p={[-3,2,z]} s={[.4,7,15.9]} color="#334346"/><Box p={[6,2,z]} s={[.4,7,15.9]} color="#334346"/><Box p={[1.5,5.3,z]} s={[10,.4,16]} color="#2f3b40"/><Box p={[-2.72,2.7,z]} s={[.07,.12,3]} color="#b0e3e4"/></group>:<group key={i}>{[-1,1].map(side=><group key={side}><Box p={[side*(12+i%3*5),1+(i%4),z]} s={[5,7+i%4*3,7]} color={['#ba9f8c','#758e8c','#afa9a2','#c3b19b'][i%4]}/>{[0,1,2].map(j=><Box key={j} p={[side*(9.4+i%3*5),j*2+1,z]} s={[.06,.7,4.8]} color="#e8ce99"/>)}<mesh position={[side*8,-1,z+5]}><cylinderGeometry args={[.15,.25,5,6]}/><meshStandardMaterial color="#756e54"/></mesh><mesh position={[side*8,2,z+5]}><icosahedronGeometry args={[2.1,1]}/><meshStandardMaterial color="#657e66"/></mesh></group>)}</group>})}
- </group>
- {(!state.traveling || state.progress<.1 || state.progress>.9)&&<group position={[0,0,state.traveling?(state.progress<.5?state.progress*600:(state.progress-1)*600):0]}>
- <Box p={[4.8,-.13,0]} s={[5.8,.24,48]} color="#a7ada9"/><Box p={[2.13,.006,0]} s={[.28,.022,48]} color="#e2bc4e"/>
- {Array.from({length:24},(_,i)=><Box key={i} p={[5,.003,i*2-24]} s={[5.6,.008,.023]} color="#788783"/>)}
- {[-18,-9,0,9,18].map(z=><group key={z}><Box p={[6.4,1.9,z]} s={[.65,3.9,.65]} color="#c5c9ba"/><Box p={[6.39,1.55,z]} s={[.67,.3,.67]} color={r.color}/><Sign text={r.stations[state.traveling&&state.progress>.5?state.index+1:state.index]} sub={r.kannada[state.traveling&&state.progress>.5?state.index+1:state.index]} p={[5.9,2.6,z]} width={4.5} rotation={-Math.PI/2} color={state.line==='purple'?'#63427e':'#286249'}/></group>)}
- <Box p={[4.9,4,0]} s={[6,.16,48]} color="#c1c5ba"/>
- {[-16,-8,0,8,16].map(z=><Box key={z} p={[4.3,3.87,z]} s={[.18,.04,3.8]} color="#eaffef"/>)}
- <Sign text="EXIT ↗" sub={state.line==='green'&&state.index===0?'Purple Line ↔ Green Line':'ನಿರ್ಗಮನ • Way out'} p={[5.1,2.9,-13]} width={3}/>
- {Array.from({length:12},(_,i)=><Box key={i} p={[5.5,i*.13, -17-i*.28]} s={[1.5,.15,.3]} color="#536865"/>)}
- </group>}
- </>
+  <color attach="background" args={['#d9c0a5']}/><fog attach="fog" args={['#d9c0a5', 70, 460]}/>
+  <ambientLight intensity={underground ? .9 : 1.5} color={underground ? '#a9d5f0' : '#ffffff'}/><hemisphereLight args={[underground ? '#a6d8ee' : '#ffe3bd', '#505c68', 1.5]}/><directionalLight position={[-20, 30, -100]} intensity={underground ? .3 : 2.8} color={underground ? '#b2d6ed' : '#ffcb92'}/>
+  <Box p={[0, -.45, -180]} s={[10, .7, 500]} color="#777c77"/>
+  {[-4.8, 4.8].map(x => <Box key={x} p={[x, .5, -180]} s={[.3, 1.3, 500]} color="#a5a69c"/>)}
+  {[-.78, .78, -3.6, -2.1].map(x => <Box key={x} p={[x, .075, -180]} s={[.085, .15, 500]} color="#b9c6c6"/>)}
+  <group ref={railBed}>{Array.from({length: 100}, (_, i) => <Box key={i} p={[-1.45, -.025, 20 - i * 4]} s={[5.5, .08, .3]} color="#4b5558"/>)}</group>
+  <group ref={moving}>{Array.from({length: 9}, (_, i) => <CityChunk key={chunk + i - 2} n={chunk + i - 2}/>)}{nearby.map(index => <Station key={index} index={index} simulation={simulation}/>)}</group>
+  <Box p={[-2.3, 2.7, 1]} s={[.24, 5.7, 1]} color="#28363e"/><Box p={[2.3, 2.7, 1]} s={[.24, 5.7, 1]} color="#28363e"/>
+  <Box p={[0, 4.6, 1]} s={[5, .5, 1]} color="#28363e"/><Box p={[0, 1.1, 1]} s={[5, .65, 1.7]} color="#25353d"/>
+ </>;
 }
-function CameraRig({state,onLock,onUnlock}:{state:SceneState;onLock:()=>void;onUnlock:()=>void}) {
- const {camera}=useThree(); const keys=useRef(new Set<string>());
- useEffect(()=>{camera.position.set(state.platform?3.2:0,1.65,state.platform?0:5.8);camera.rotation.set(0,state.platform?-Math.PI/2:0,0)},[state.platform,state.line,camera]);
- useEffect(()=>{const down=(e:KeyboardEvent)=>keys.current.add(e.code),up=(e:KeyboardEvent)=>keys.current.delete(e.code),clear=()=>keys.current.clear();window.addEventListener('keydown',down);window.addEventListener('keyup',up);window.addEventListener('blur',clear);return()=>{window.removeEventListener('keydown',down);window.removeEventListener('keyup',up);window.removeEventListener('blur',clear)}},[]);
- useFrame((_,dt)=>{if(!state.platform||state.paused||!document.pointerLockElement)return;const direction=new THREE.Vector3();camera.getWorldDirection(direction);direction.y=0;direction.normalize();const right=new THREE.Vector3().crossVectors(direction,new THREE.Vector3(0,1,0));const move=new THREE.Vector3();if(keys.current.has('KeyW'))move.add(direction);if(keys.current.has('KeyS'))move.sub(direction);if(keys.current.has('KeyD'))move.add(right);if(keys.current.has('KeyA'))move.sub(right);camera.position.addScaledVector(move.normalize(),Math.min(dt,.05)*2.6);camera.position.x=THREE.MathUtils.clamp(camera.position.x,2.5,5.6);camera.position.z=THREE.MathUtils.clamp(camera.position.z,-14,14)});
- return <PointerLockControls selector="#look-button" onLock={onLock} onUnlock={onUnlock}/>;
+export default function World(props: Props) {
+ return <Canvas camera={{fov: 65, near: .1, far: 650, position: [0, 2.8, 3]}} dpr={[1, 1.5]} gl={{antialias: true}}><Scenery {...props}/></Canvas>;
 }
-export default function World({state,onLock,onUnlock}:{state:SceneState;onLock:()=>void;onUnlock:()=>void}) {return <Canvas camera={{fov:68,near:.05,far:180,position:[0,1.65,5.8]}} dpr={[1,1.5]} gl={{antialias:true}}><Environment state={state}/><Coach state={state}/><CameraRig state={state} onLock={onLock} onUnlock={onUnlock}/></Canvas>}
