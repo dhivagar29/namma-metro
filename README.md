@@ -42,6 +42,7 @@ Manual traction and service braking ramp smoothly; coasting preserves momentum. 
 
 ## Cab and Bengaluru world
 
+- Next-station, traction/distance, westbound route, and PA HUD cards live in the cab dashboard, keeping the forward windscreen clear.
 - Seated, forward-facing windscreen view; molded cab pillars, glass, parked wiper, desk ventilation, Purple trim, physical master-controller lever, and reactive lamps.
 - Legible speed dial, English/Kannada destination, door-lock lamps, ATP/trip status, duty clock, passengers, and boarding/stop-marker guidance.
 - Twin standard-gauge tracks, dense concrete sleepers, metallic rail heads, overhead contact wires and masts, concrete viaduct beams, and two supporting piers per 80 m chunk.
