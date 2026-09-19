@@ -5,6 +5,7 @@ import { kannada, stations, stationPosition } from './routes';
 import type { Control, Simulation } from './simulation';
 import { Cab } from './Cab';
 import { PassingMetro } from './PassingMetro';
+import { Passengers } from './Passengers';
 import { Blocks, Box, type Block, type V3 } from './geometry';
 type Props = { simulation: MutableRefObject<Simulation>; control: MutableRefObject<Control>; paused: boolean };
 const PURPLE = '#71358f';
@@ -38,14 +39,7 @@ function Sign({ text, sub, p, width = 8, color = PURPLE }: { text: string; sub: 
  return <mesh position={p}><planeGeometry args={[width, width * 320 / 1536]}/><meshBasicMaterial map={texture} side={THREE.DoubleSide} toneMapped={false}/></mesh>;
 }
 const Station = memo(function Station({ index, simulation }: { index: number; simulation: MutableRefObject<Simulation> }) {
- const crowd = useRef<THREE.Group>(null);
  const underground = index >= 19 && index <= 23;
- useFrame(() => {
-  if (!crowd.current) return;
-  const s = simulation.current;
-  crowd.current.visible = s.stops <= index;
-  crowd.current.position.x = s.target === index && s.doors ? -Math.min(1.3, s.dwell * .24) : 0;
- });
  const kit = useMemo(() => {
   const blocks: Block[] = [];
   const add = (p:V3,s:V3,color:string,r?:V3)=>blocks.push({p,s,color,r});
@@ -84,11 +78,7 @@ const Station = memo(function Station({ index, simulation }: { index: number; si
   <Sign text={index===22 ? 'MAJESTIC  ↔  GREEN LINE' : 'NAMMA METRO · ನಮ್ಮ ಮೆಟ್ರೋ'} sub={index===22 ? 'ಹಸಿರು ಮಾರ್ಗ  /  INTERCHANGE' : 'PURPLE LINE  /  ಚಲ್ಲಘಟ್ಟ →'} p={[-2.1,6.38,-36.6]} width={16}/>
   <Sign text="S" sub="6 CAR" p={[1.75,2.2,-.92]} width={.64} color="#283a40"/>
   <Sign text="EXIT →" sub="ನಿರ್ಗಮನ" p={[6.1,2.8,-20]} width={1.3} color="#24674c"/>
-  <group ref={crowd}>{Array.from({length:14},(_,i)=><group key={i} position={[3.5+(i%3)*.55,.92,-18+i*8]}>
-   <Box p={[0,.95,0]} s={[.38,.68,.28]} color={['#dda358','#409596','#b9557e','#ded5b6','#75578f'][i%5]}/>
-   <mesh position={[0,1.46,0]}><sphereGeometry args={[.17,8,6]}/><meshStandardMaterial color={i%2?'#845a41':'#b78760'}/></mesh>
-   <Box p={[-.1,.32,0]} s={[.14,.65,.2]} color="#303746"/><Box p={[.1,.32,0]} s={[.14,.65,.2]} color="#303746"/>
-  </group>)}</group>
+  <Passengers index={index} simulation={simulation}/>
  </group>;
 });
 const Tunnel = memo(function Tunnel({ stationBox }: { stationBox:boolean }) {
