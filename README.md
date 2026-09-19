@@ -2,7 +2,7 @@
 
 A playable first-person evening commute through a compact, stylized Bengaluru. Ride inside a metro coach, watch the city become a tunnel, and step onto station platforms. No backend, accounts, or remote game assets.
 
-Live: _pending_
+Live: https://namma-metro-1a93.vercel.app
 
 ## Run locally
 
