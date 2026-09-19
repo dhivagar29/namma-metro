@@ -113,7 +113,7 @@ Kannada uses system fonts plus an optional, non-blocking **Noto Sans Kannada** s
 36. Kengeri
 37. Challaghatta
 
-All other stations are elevated. Station order follows the supplied brief; every hop is an illustrative 1.2 km, totaling 43.2 km. A duty takes approximately 50 minutes depending on driving. Green Line is not playable.
+All other stations are elevated. Station order follows the supplied brief; the 36 inter-station distances use the supplied Notion Purple Line bible / Vonter GTFS shapes metres, totaling 43.377 km. A duty takes approximately 50 minutes depending on driving. Green Line is not playable.
 
 ## Performance
 

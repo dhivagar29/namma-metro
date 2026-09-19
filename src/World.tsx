@@ -9,7 +9,7 @@ import { Passengers } from './Passengers';
 import { Blocks, Box, type Block, type V3 } from './geometry';
 type Props = { simulation: MutableRefObject<Simulation>; control: MutableRefObject<Control>; paused: boolean };
 const PURPLE = '#71358f';
-const isUnderground = (distance: number) => distance >= 19 * 1200 - 480 && distance <= 23 * 1200 + 480;
+const isUnderground = (distance: number) => distance >= stationPosition(19) - 480 && distance <= stationPosition(23) + 480;
 const mod = (n: number, m: number) => ((n % m) + m) % m;
 function Sign({ text, sub, p, width = 8, color = PURPLE }: { text: string; sub: string; p: V3; width?: number; color?: string }) {
  const texture = useMemo(() => {
@@ -109,8 +109,8 @@ const Tunnel = memo(function Tunnel({ stationBox }: { stationBox:boolean }) {
 const CityChunk = memo(function CityChunk({ n, simulation }: { n:number; simulation:MutableRefObject<Simulation> }) {
  const traffic=useRef<THREE.Group>(null);
  const under=isUnderground(n*80);
- const stationBox=Math.abs(n*80-Math.round(n*80/1200)*1200)<170;
- const gradeLift = Math.max(0,1-Math.abs(n*80-13*1200)/600)*8.5;
+ const stationBox=stations.some((_,index)=>Math.abs(n*80-stationPosition(index))<170);
+ const gradeLift = Math.max(0,1-Math.abs(n*80-stationPosition(13))/600)*8.5;
  const infrastructure=useMemo(()=>{
   const list:Block[]=[{p:[3.55,3,-20],s:[.2,6,.22],color:'#667677'},{p:[1.5,5.75,-20],s:[4.2,.13,.15],color:'#4e616a'}];
   if(gradeLift<7) for(const z of [-20,20]) {

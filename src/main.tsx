@@ -1,7 +1,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import World from './World';
-import { stations, kannada, stationType } from './routes';
+import { stations, kannada, stationType, totalLengthM } from './routes';
 import { distanceToStop, DWELL, initialState, inZone, shouldAnnounce, step, toggleDoors, type Control } from './simulation';
 import { audio } from './audio';
 import './style.css';
@@ -75,7 +75,7 @@ function App() {
      <div className="eyebrow">WESTBOUND <span>PL / 01</span></div>
      <h2>To Challaghatta <span>↗</span></h2><p>Every station. One continuous journey.</p>
      <div className="route-track" aria-label={`${view.stops} of 37 stations served`}>{stations.map((name,i)=><i key={name} title={`${i+1}. ${name}`} className={i<view.stops?'done':i===view.target?'active':''}/>)}</div>
-     <div className="route-progress"><span>{String(view.stops).padStart(2,'0')} / 37 served</span><span>{(view.position/1000).toFixed(1)} / 43.2 km</span></div>
+     <div className="route-progress"><span>{String(view.stops).padStart(2,'0')} / 37 served</span><span>{(view.position/1000).toFixed(1)} / {(totalLengthM/1000).toFixed(3)} km</span></div>
      <div className="upcoming">{stations.slice(Math.max(0,view.target-1),Math.min(37,view.target+3)).map(name=>{const i=stations.indexOf(name);return <div key={name} className={i===view.target?'current':''}><span>{i<view.stops?'✓':String(i+1).padStart(2,'0')}</span><b>{name}</b>{i===view.target&&<small>←</small>}</div>;})}</div>
      <div className="route-foot"><span>{stationType(view.target)}{view.target===22?' · ↔ Green Line':' · Bengaluru'}</span><button onClick={()=>setRouteOpen(v=>!v)} aria-expanded={routeOpen} aria-controls="all-stations">{routeOpen?'Close route':'All 37 stops'}</button></div>
      {routeOpen&&<ol id="all-stations" className="full-route">{stations.map((name,i)=><li key={name} className={i===view.target?'current':''}>{name}{i<view.stops?' ✓':''}</li>)}</ol>}
@@ -97,7 +97,7 @@ function App() {
    <div className="eyebrow">ನಮ್ಮ ಮೆಟ್ರೋ <span>DRIVER OPERATIONS / V2</span></div><div className="welcome-line">PURPLE LINE <span>ಬೆಂಗಳೂರು</span></div>
    <h2 id="dialog-title">{view.complete?'End of the line.':paused?'Duty on hold.':<>Your cab.<br/>Your city.</>}</h2>
    <p>{view.complete?`${view.stops} stations served · ${view.passengers} passengers boarded · ${clock(view.elapsed)} driving time.`:paused?'Your duty is paused. Resume from exactly where you left off.':'The evening rush. The familiar purple. Take Bengaluru home, one station at a time.'}</p>
-   {!started&&<><div className="line-select"><i/><b>Whitefield <span>(Kadugodi)</span></b><span>→</span><b>Challaghatta</b></div><div className="briefing"><div><kbd>W</kbd><span>Power</span><kbd>S</kbd><span>Brake</span><kbd>D</kbd><span>Doors</span></div><p>Wait for boarding, close the doors, then drive. Stop within 8 m of each marker. ATP helps protect every approach.</p></div><div className="duty-details"><span>37 CONSECUTIVE STOPS</span><span>43.2 KM · ~50 MIN</span></div></>}
+   {!started&&<><div className="line-select"><i/><b>Whitefield <span>(Kadugodi)</span></b><span>→</span><b>Challaghatta</b></div><div className="briefing"><div><kbd>W</kbd><span>Power</span><kbd>S</kbd><span>Brake</span><kbd>D</kbd><span>Doors</span></div><p>Wait for boarding, close the doors, then drive. Stop within 8 m of each marker. ATP helps protect every approach.</p></div><div className="duty-details"><span>37 CONSECUTIVE STOPS</span><span>{(totalLengthM/1000).toFixed(3)} KM · ~50 MIN</span></div></>}
    <button className="primary" autoFocus onClick={paused&&!view.complete?()=>setPaused(false):start}>{view.complete?'Start a new duty':paused?'Resume duty':'Select Purple · Begin duty'} <span>→</span></button><small className="modal-note">{!started?'Headphones recommended · Sound begins with your duty':'W / S to drive · M to mute · Esc to pause'}</small>
   </section></div>}
  </main>;
