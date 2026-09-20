@@ -15,3 +15,9 @@
 ## Rules
 - No piracy, no private CCTV
 - Credit every baked asset in README
+
+## Cab interior refs (polish 5) — Wikimedia Commons, reference only / recreate in engine
+- File:Tyne and Wear Metro train cab 02.jpg
+- File:Tokyo-Metro Series05R Cab.jpg
+- File:Tokyo-Metro Series9000-9113 Cab.jpg
+Recreate procedurally; do not ship photos as textures unless license verified CC-compatible and credited.

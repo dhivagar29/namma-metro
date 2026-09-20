@@ -43,7 +43,7 @@ Manual traction and service braking ramp smoothly; coasting preserves momentum. 
 ## Cab and Bengaluru world
 
 - Next-station, traction/distance, westbound route, and PA HUD cards live in the cab dashboard, keeping the forward windscreen clear.
-- Seated, forward-facing windscreen view; molded cab pillars, glass, parked wiper, desk ventilation, Purple trim, physical master-controller lever, and reactive lamps.
+- Seated, forward-facing windscreen view; deep rubberized worktop with rounded wrist edge, inclined service panels, recessed speed/effort gauges, grouped pushbuttons and toggles, notched master-controller lever, Purple header trim, demister grille, and a parked sill wiper. Door-circuit, ATP/emergency, and traction lamps follow the existing simulation; the physical gauges show speed and acceleration. Mesh controls are visual counterparts to the keyboard/HTML controls.
 - Legible speed dial, English/Kannada destination, door-lock lamps, ATP/trip status, duty clock, passengers, and boarding/stop-marker guidance.
 - Twin standard-gauge tracks, dense concrete sleepers, metallic rail heads, overhead contact wires and masts, concrete viaduct beams, and two supporting piers per 80 m chunk.
 - Raised platforms with yellow tactile edges, repeating canopy supports, benches, bilingual Purple station boards, waiting passengers, exit signs, and Majestic Green interchange signage.
@@ -127,6 +127,8 @@ The target is desktop ~60 fps. **Frame rate has not been measured in this sandbo
 
 `npm run build` passes TypeScript and Vite. Automated browser verification was **blocked by the environment**: Vite cannot listen (`EPERM`), and Chromium exits on a sandbox-denied socket operation. No screenshots, live interaction, audible playback, or measured fps are claimed as verified.
 
+Polish 5 cab checks: `npm test` and `npm run build` pass. A mounted Three.js scene check exercised the controller and door/closing/ATP/traction lamps; raycasts confirmed ten forward crowd heads and both rails at 25 m remain clear of opaque cab geometry. An offline software geometry preview checked the worktop against a bottom 20% HUD mask; it does not verify browser materials or lighting. `style.css`, `main.tsx`, the seated camera, routes, simulation, passengers, and audio are unchanged by this pass. Live browser verification remains blocked as above.
+
 For operator verification on a machine with Playwright and Chromium:
 
 ```sh
@@ -145,6 +147,8 @@ The browser script intercepts requests to the built files (no HTTP listener), ch
 | --- | --- | --- |
 | [`scripts/generate-audio.mjs`](scripts/generate-audio.mjs), [`public/audio/LICENSE.txt`](public/audio/LICENSE.txt) | Original procedural synthesis; [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) for generated WAVs | All nine sound assets; no recordings or third-party samples |
 | `src/World.tsx`, `src/Cab.tsx`, `src/PassingMetro.tsx`, `src/geometry.tsx` | Original project work; no third-party model/texture assets | Cab, station/tunnel/viaduct kits, city, traffic, train, painted boards |
+| [Tyne and Wear Metro train cab 02](https://commons.wikimedia.org/wiki/File:Tyne_and_Wear_Metro_train_cab_02.jpg) | Chris McKenna (Thryduulf) / [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/); photographed with the driver's permission | Reference in `refs/images/cab/` for the deep shelf, inclined instrument fascia, round bezels, and grouped switches. Original retained unmodified; inspiration only, no photo pixels shipped |
+| [Tokyo-Metro Series05R Cab](https://commons.wikimedia.org/wiki/File:Tokyo-Metro_Series05R_Cab.jpg) | MaedaAkihiko / [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | Reference in `refs/images/cab/` for the molded worktop, controller gate, train-status display, panel fasteners, and window framing. Original retained unmodified; recreated with meshes and original procedural markings |
 | [BMRCL Metro Map](https://commons.wikimedia.org/wiki/File:BMRCL_Metro_Map.png) | Sam2905 / [CC BY-SA 4.0](https://creativecommons.org/licenses/by-sa/4.0/) | Supplied reference in `refs/images/`; Purple/Green map conventions. Original image retained unmodified; no image pixels in the runtime |
 | [Bengaluru Urban Rail Transit Diagram](https://commons.wikimedia.org/wiki/File:Bengaluru_Urban_Rail_Transit_Diagram.png) | Footy2000 / [CC BY 4.0](https://creativecommons.org/licenses/by/4.0/) | Supplied network reference; original retained unmodified, not bundled in the game |
 | [NammaMetroSchematic](https://commons.wikimedia.org/wiki/File:NammaMetroSchematic.png) | Supplied reference; file license not independently verified here | Retained in `refs/images/`; not used in generated assets or shipped in `dist/` |
