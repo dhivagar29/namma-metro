@@ -9,6 +9,8 @@ import { Passengers } from './Passengers';
 import { Blocks, Box, type Block, type V3 } from './geometry';
 import { CHUNK_M, isEnclosed, nearbySlices } from './corridor';
 import { CorridorAssets, CorridorChunk } from './CorridorChunk';
+import { Billboard } from './Billboard';
+import { nearbyBillboards } from './billboards';
 type Props = { simulation: MutableRefObject<Simulation>; control: MutableRefObject<Control>; paused: boolean };
 const PURPLE = '#71358f';
 function Sign({ text, sub, p, width = 8, color = PURPLE, mark }: { text: string; sub: string; p: V3; width?: number; color?: string; mark?: 'kanaka' }) {
@@ -116,6 +118,7 @@ function Scenery({ simulation, control, paused }: Props) {
  const ambient=useRef<THREE.AmbientLight>(null), sky=useRef<THREE.HemisphereLight>(null), sunLight=useRef<THREE.DirectionalLight>(null), sun=useRef<THREE.Mesh>(null), fluorescent=useRef<THREE.PointLight>(null);
  const warm=useMemo(()=>new THREE.Color('#f6d7b7'),[]), cool=useMemo(()=>new THREE.Color('#99c6de'),[]);
  const slices=useMemo(()=>nearbySlices(chunk*CHUNK_M),[chunk]);
+ const billboards=useMemo(()=>nearbyBillboards(chunk*CHUNK_M),[chunk]);
  useEffect(()=>{
   const canvas=gl.domElement;
   const down=(e:PointerEvent)=>{look.current.dragging=true;canvas.setPointerCapture(e.pointerId);};
@@ -151,7 +154,7 @@ function Scenery({ simulation, control, paused }: Props) {
   <mesh ref={sun} position={[-145,78,-600]}><sphereGeometry args={[18,24,16]}/><meshBasicMaterial color="#ffd6a0" fog={false}/></mesh>
   <Track simulation={simulation}/>
   <PassingMetro simulation={simulation}/>
-  <group ref={moving}><CorridorAssets>{slices.map(slice=><CorridorChunk key={slice.key} slice={slice}/>)}</CorridorAssets>{nearby.map(index=><Station key={index} index={index} simulation={simulation}/>)}</group>
+  <group ref={moving}><CorridorAssets>{slices.map(slice=><CorridorChunk key={slice.key} slice={slice}/>)}</CorridorAssets>{billboards.map(board=><Billboard key={board.hopIndex} board={board} paused={paused}/>)}{nearby.map(index=><Station key={index} index={index} simulation={simulation}/>)}</group>
   <Cab simulation={simulation} control={control}/>
  </>;
 }
