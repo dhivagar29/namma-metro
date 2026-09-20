@@ -7,10 +7,10 @@ import { Cab } from './Cab';
 import { PassingMetro } from './PassingMetro';
 import { Passengers } from './Passengers';
 import { Blocks, Box, type Block, type V3 } from './geometry';
+import { CHUNK_M, isEnclosed, nearbySlices } from './corridor';
+import { CorridorAssets, CorridorChunk } from './CorridorChunk';
 type Props = { simulation: MutableRefObject<Simulation>; control: MutableRefObject<Control>; paused: boolean };
 const PURPLE = '#71358f';
-const isUnderground = (distance: number) => distance >= stationPosition(19) - 480 && distance <= stationPosition(23) + 480;
-const mod = (n: number, m: number) => ((n % m) + m) % m;
 function Sign({ text, sub, p, width = 8, color = PURPLE }: { text: string; sub: string; p: V3; width?: number; color?: string }) {
  const texture = useMemo(() => {
   const canvas = document.createElement('canvas'); canvas.width = 1536; canvas.height = 320;
@@ -81,80 +81,6 @@ const Station = memo(function Station({ index, simulation }: { index: number; si
   <Passengers index={index} simulation={simulation}/>
  </group>;
 });
-const Tunnel = memo(function Tunnel({ stationBox }: { stationBox:boolean }) {
- const blocks = useMemo(()=>{
-  const list:Block[]=[];
-  if(stationBox) {
-   list.push({p:[-2.1,8.6,0],s:[24,.6,80],color:'#333c48'});
-   for(const x of [-14,10]) list.push({p:[x,4,0],s:[.5,9,80],color:'#354451'});
-  } else {
-   // Faceted concrete tube, with radial segment joints and cable troughs.
-   for(let j=0;j<18;j++) {
-    const a=j/18*Math.PI*2, x=-2.1+6.5*Math.cos(a), y=2+6.5*Math.sin(a);
-    list.push({p:[x,y,0],s:[.3,2.35,80],r:[0,0,a],color:j%2?'#3d4952':'#424e58'});
-    for(let z=-40;z<40;z+=8) list.push({p:[x*.99,y,z],s:[.38,2.4,.12],r:[0,0,a],color:'#5b676e'});
-   }
-   for(const x of [-7.9,3.8]) {
-    list.push({p:[x,1.5,0],s:[.22,.45,80],color:'#28383f'});
-    list.push({p:[x,2.65,0],s:[.09,.05,80],color:'#d5aa65'});
-   }
-  }
-  return list;
- },[stationBox]);
- return <><Blocks items={blocks}/>{[-32,0,32].map(z=><group key={z}>
-  <Box p={[stationBox?8.8:3.5,4,z]} s={[.07,.16,3]} color="#d5e9df"/>
-  <mesh position={[stationBox?-12:-7.8,3.5,z]}><boxGeometry args={[.07,.16,2]}/><meshBasicMaterial color="#c1e4e6"/></mesh>
- </group>)}</>;
-});
-const CityChunk = memo(function CityChunk({ n, simulation }: { n:number; simulation:MutableRefObject<Simulation> }) {
- const traffic=useRef<THREE.Group>(null);
- const under=isUnderground(n*80);
- const stationBox=stations.some((_,index)=>Math.abs(n*80-stationPosition(index))<170);
- const gradeLift = Math.max(0,1-Math.abs(n*80-stationPosition(13))/600)*8.5;
- const infrastructure=useMemo(()=>{
-  const list:Block[]=[{p:[3.55,3,-20],s:[.2,6,.22],color:'#667677'},{p:[1.5,5.75,-20],s:[4.2,.13,.15],color:'#4e616a'}];
-  if(gradeLift<7) for(const z of [-20,20]) {
-   list.push({p:[-2.1,-5.4+gradeLift/2,z],s:[1.7,8.4-gradeLift,2.2],color:'#a6aaa2'});
-   list.push({p:[-2.1,-1.4,z],s:[8.5,1,2.7],color:'#b3b6ae'});
-  }
-  return list;
- },[gradeLift]);
- const blocks=useMemo(()=>{
-  const list:Block[]=[]; const add=(p:V3,s:V3,color:string,r?:V3)=>list.push({p,s,color,r});
-  if(under) return list;
-  add([0,-10,0],[220,.4,80],'#555f53');
-  add([14,-9.72,0],[16,.09,80],'#424d52');
-  add([-18,-9.72,0],[10,.09,80],'#465153');
-  for(let z=-36;z<40;z+=12) {add([14,-9.65,z],[.2,.02,5],'#d8d0b6');add([6,-9.5,z],[.35,.25,5],'#ddd6bd');}
-  for(const side of [-1,1]) for(let b=0;b<3;b++) {
-   const seed=mod(n*17+b*13+side,19), height=9+seed*1.15, x=side*(23+seed*.65), z=b*27-28;
-   add([x,height/2-9.5,z],[10,height,18],['#afb5ac','#b4a69b','#8b9c9d','#bcb39e'][seed%4]);
-   add([x,height-9.3,z],[10.7,.4,18.7],'#626d70');
-   add([x+2,height-8.6,z+3],[2,1.4,2],'#bac0b2');
-   for(let y=-6;y<height-10;y+=3) for(let col=-3;col<=3;col+=2) {
-    add([x+col,y,z+9.04],[1.1,1.4,.04],mod(seed+col+Math.floor(y),4)===0?'#d6b270':'#526b74');
-   }
-   add([x,-6.9,z+9.06],[9,1,.08],seed%2?PURPLE:'#407565');
-  }
-  for(const side of [-1,1]) for(let z=-32;z<40;z+=24) add([side*10,-5.7,z],[.45,7,.45],'#726452');
-  return list;
- },[n,under]);
- useFrame(()=> {if(traffic.current) traffic.current.position.z=mod(simulation.current.elapsed*5+n*7,54)-27;});
- return <group position={[0,0,-n*80]}>{under?<Tunnel stationBox={stationBox}/>:<>
-  <Blocks items={infrastructure}/>
-  <group position={[0,gradeLift,0]}><Blocks items={blocks}/>
-   {[-1,1].flatMap(side=>[-32,-8,16].map(z=><group key={`${side}-${z}`} position={[side*10,-1.6,z]}>
-    <mesh scale={[1.25,.72,1]}><icosahedronGeometry args={[3.6,1]}/><meshStandardMaterial color={z===-8?'#4d7060':'#405f51'} roughness={1}/></mesh>
-   </group>))}
-   <group ref={traffic}>{[0,1,2].map(i=><group key={i} position={[i===1?18:10,-8.9,i*19-19]}>
-    <Box p={[0,0,0]} s={[1.7,1.2,i===1?5:2.5]} color={i===0?'#dab848':i===1?'#7199ac':'#cad0c7'}/>
-    <Box p={[0,.72,0]} s={[1.6,.38,1.9]} color={i===0?'#366747':'#263e49'}/>
-    <Box p={[0,.1,-1.27]} s={[1.3,.18,.04]} color="#faeac2"/>
-   </group>)}</group>
-   {mod(n,3)===0&&<Sign text={mod(n,2)===0?'ಬೆಂಗಳೂರು  BENGALURU':'DARSHINI · FILTER COFFEE'} sub={mod(n,2)===0?'ನಮ್ಮ ಊರು · OUR CITY':'ದರ್ಶಿನಿ  •  ಕಾಫಿ  •  ತಿಂಡಿ'} p={[-22,3.5,12]} width={12} color={mod(n,2)===0?'#315b53':'#894d47'}/>}
-  </group>
- </>}</group>;
-});
 const Track = memo(function Track({ simulation }: { simulation:MutableRefObject<Simulation> }) {
  const moving=useRef<THREE.Group>(null);
  const sleepers=useMemo(()=>{
@@ -179,7 +105,10 @@ const Track = memo(function Track({ simulation }: { simulation:MutableRefObject<
 function Scenery({ simulation, control, paused }: Props) {
  const moving=useRef<THREE.Group>(null); const [chunk,setChunk]=useState(0);
  const {camera,gl,scene}=useThree(); const look=useRef({x:0,y:0,dragging:false});
- const dusk=useMemo(()=>new THREE.Color('#c3a3a0'),[]), dark=useMemo(()=>new THREE.Color('#182a39'),[]);
+ const dusk=useMemo(()=>new THREE.Color('#bda49d'),[]), dark=useMemo(()=>new THREE.Color('#101f2a'),[]);
+ const ambient=useRef<THREE.AmbientLight>(null), sky=useRef<THREE.HemisphereLight>(null), sunLight=useRef<THREE.DirectionalLight>(null), sun=useRef<THREE.Mesh>(null), fluorescent=useRef<THREE.PointLight>(null);
+ const warm=useMemo(()=>new THREE.Color('#f6d7b7'),[]), cool=useMemo(()=>new THREE.Color('#99c6de'),[]);
+ const slices=useMemo(()=>nearbySlices(chunk*CHUNK_M),[chunk]);
  useEffect(()=>{
   const canvas=gl.domElement;
   const down=(e:PointerEvent)=>{look.current.dragging=true;canvas.setPointerCapture(e.pointerId);};
@@ -192,27 +121,33 @@ function Scenery({ simulation, control, paused }: Props) {
  useFrame((_,dt)=>{
   const s=simulation.current;
   if(moving.current) moving.current.position.z=s.position;
-  const nextChunk=Math.floor(s.position/80);if(nextChunk!==chunk)setChunk(nextChunk);
+  const nextChunk=Math.floor(s.position/CHUNK_M);if(nextChunk!==chunk)setChunk(nextChunk);
   camera.rotation.order='YXZ';camera.rotation.y=THREE.MathUtils.damp(camera.rotation.y,look.current.x,8,dt);
   camera.rotation.x=THREE.MathUtils.damp(camera.rotation.x,-.035+look.current.y,8,dt);
   camera.position.y=2.8+(paused?0:Math.sin(s.position*.2)*Math.min(.009,s.speed*.0004));
-  const under=isUnderground(s.position);(scene.background as THREE.Color).lerp(under?dark:dusk,Math.min(1,dt*2));
-  if(scene.fog instanceof THREE.Fog){scene.fog.color.copy(scene.background as THREE.Color);scene.fog.far=under?175:490;scene.fog.near=under?45:95;}
+  const under=isEnclosed(s.position);(scene.background as THREE.Color).lerp(under?dark:dusk,Math.min(1,dt*2));
+  if(scene.fog instanceof THREE.Fog){scene.fog.color.copy(scene.background as THREE.Color);scene.fog.far=under?160:640;scene.fog.near=under?25:140;}
+  const blend=Math.min(1,dt*4);
+  if(ambient.current){ambient.current.color.lerp(under?cool:warm,blend);ambient.current.intensity=THREE.MathUtils.damp(ambient.current.intensity,under?.85:.95,4,dt);}
+  if(sky.current)sky.current.color.lerp(under?cool:warm,blend);
+  if(sunLight.current)sunLight.current.intensity=THREE.MathUtils.damp(sunLight.current.intensity,under?.1:2.15,4,dt);
+  if(sun.current)sun.current.visible=!under;
+  if(fluorescent.current)fluorescent.current.intensity=under?18:0;
  });
- const under=isUnderground(chunk*80);
- const nearby=stations.map((_,i)=>i).filter(i=>Math.abs(stationPosition(i)-chunk*80)<660);
+ const nearby=stations.map((_,i)=>i).filter(i=>Math.abs(stationPosition(i)-chunk*CHUNK_M)<850);
  return <>
-  <color attach="background" args={['#c3a3a0']}/><fog attach="fog" args={['#c3a3a0',95,490]}/>
-  <ambientLight intensity={under?.75:1.15} color={under?'#97bbd4':'#f6e2d5'}/>
-  <hemisphereLight args={[under?'#91b6ca':'#edc5ac','#3e4c5d',1.35]}/>
-  <directionalLight position={[-25,40,-120]} intensity={under?.25:2.3} color="#ffc78e"/>
-  {!under&&<mesh position={[-145,78,-470]}><sphereGeometry args={[18,24,16]}/><meshBasicMaterial color="#ffd6a0" fog={false}/></mesh>}
+  <color attach="background" args={['#bda49d']}/><fog attach="fog" args={['#bda49d',140,640]}/>
+  <ambientLight ref={ambient} intensity={.95} color="#f6d7b7"/>
+  <hemisphereLight ref={sky} args={['#f6d7b7','#354b61',1.2]}/>
+  <directionalLight ref={sunLight} position={[-25,40,-120]} intensity={2.15} color="#ffc78e"/>
+  <pointLight ref={fluorescent} position={[0,4,-16]} color="#acd9ed" intensity={0} distance={55} decay={1.2}/>
+  <mesh ref={sun} position={[-145,78,-600]}><sphereGeometry args={[18,24,16]}/><meshBasicMaterial color="#ffd6a0" fog={false}/></mesh>
   <Track simulation={simulation}/>
   <PassingMetro simulation={simulation}/>
-  <group ref={moving}>{Array.from({length:9},(_,i)=><CityChunk key={chunk+i-2} n={chunk+i-2} simulation={simulation}/>)}{nearby.map(index=><Station key={index} index={index} simulation={simulation}/>)}</group>
+  <group ref={moving}><CorridorAssets>{slices.map(slice=><CorridorChunk key={slice.key} slice={slice}/>)}</CorridorAssets>{nearby.map(index=><Station key={index} index={index} simulation={simulation}/>)}</group>
   <Cab simulation={simulation} control={control}/>
  </>;
 }
 export default memo(function World(props: Props) {
- return <Canvas camera={{fov:66,near:.08,far:650,position:[0,2.8,3]}} dpr={[1,1.5]} gl={{antialias:true,powerPreference:'high-performance'}}><Scenery {...props}/></Canvas>;
+ return <Canvas camera={{fov:66,near:.08,far:850,position:[0,2.8,3]}} dpr={[1,1.5]} gl={{antialias:true,powerPreference:'high-performance'}}><Scenery {...props}/></Canvas>;
 });

@@ -1,0 +1,468 @@
+{
+  "source": "Notion Purple corridor views",
+  "hops": [
+    {
+      "i": 0,
+      "from": "Whitefield (Kadugodi)",
+      "to": "Hopefarm Channasandra",
+      "m": 1046,
+      "layout": "elevated",
+      "tags": [
+        "school",
+        "retail",
+        "police",
+        "depot",
+        "industrial"
+      ]
+    },
+    {
+      "i": 1,
+      "from": "Hopefarm Channasandra",
+      "to": "Kadugodi Tree Park",
+      "m": 969,
+      "layout": "elevated",
+      "tags": [
+        "church",
+        "IT_parks",
+        "forest",
+        "hotel",
+        "industrial"
+      ]
+    },
+    {
+      "i": 2,
+      "from": "Kadugodi Tree Park",
+      "to": "Pattandur Agrahara",
+      "m": 1034,
+      "layout": "elevated",
+      "tags": [
+        "ITPB",
+        "SAP",
+        "TCS",
+        "HP",
+        "forest"
+      ]
+    },
+    {
+      "i": 3,
+      "from": "Pattandur Agrahara",
+      "to": "Sri Sathya Sai Hospital",
+      "m": 1499,
+      "layout": "elevated",
+      "tags": [
+        "hospital",
+        "ITPL",
+        "mall",
+        "IBM",
+        "cinema"
+      ]
+    },
+    {
+      "i": 4,
+      "from": "Sri Sathya Sai Hospital",
+      "to": "Nallurhalli",
+      "m": 735,
+      "layout": "elevated",
+      "tags": [
+        "medical_campus",
+        "TCS",
+        "hotel",
+        "TTMC"
+      ]
+    },
+    {
+      "i": 5,
+      "from": "Nallurhalli",
+      "to": "Kundalahalli",
+      "m": 1016,
+      "layout": "elevated",
+      "tags": [
+        "IT_offices",
+        "Brookefield_mall",
+        "GE"
+      ]
+    },
+    {
+      "i": 6,
+      "from": "Kundalahalli",
+      "to": "Seetharamapalya",
+      "m": 928,
+      "layout": "elevated",
+      "tags": [
+        "eye_hospital",
+        "GE",
+        "RMZ",
+        "industrial_IT"
+      ]
+    },
+    {
+      "i": 7,
+      "from": "Seetharamapalya",
+      "to": "Hoodi",
+      "m": 1032,
+      "layout": "elevated",
+      "tags": [
+        "ABB",
+        "school",
+        "DMart",
+        "Hoodi_junction"
+      ]
+    },
+    {
+      "i": 8,
+      "from": "Hoodi",
+      "to": "Garudacharpalya",
+      "m": 1609,
+      "layout": "elevated",
+      "tags": [
+        "tech_park",
+        "auto_yard",
+        "Tata_Elxsi",
+        "ESI"
+      ]
+    },
+    {
+      "i": 9,
+      "from": "Garudacharpalya",
+      "to": "Singayyanapalya",
+      "m": 1241,
+      "layout": "elevated",
+      "tags": [
+        "Phoenix_MarketCity",
+        "VR_Bengaluru",
+        "hospital",
+        "Capgemini"
+      ]
+    },
+    {
+      "i": 10,
+      "from": "Singayyanapalya",
+      "to": "Krishnarajapura (KR Pura)",
+      "m": 1762,
+      "layout": "elevated",
+      "tags": [
+        "KR_Puram_hub",
+        "rail",
+        "industrial",
+        "college"
+      ]
+    },
+    {
+      "i": 11,
+      "from": "Krishnarajapura (KR Pura)",
+      "to": "Benniganahalli",
+      "m": 1081,
+      "layout": "elevated",
+      "tags": [
+        "lake_park",
+        "Tin_Factory",
+        "college",
+        "WeWork"
+      ]
+    },
+    {
+      "i": 12,
+      "from": "Benniganahalli",
+      "to": "Baiyappanahalli",
+      "m": 1918,
+      "layout": "at-grade",
+      "tags": [
+        "depot_yards",
+        "lake",
+        "office_towers",
+        "CocaCola"
+      ]
+    },
+    {
+      "i": 13,
+      "from": "Baiyappanahalli",
+      "to": "Swami Vivekananda Road",
+      "m": 1035,
+      "layout": "at-grade",
+      "tags": [
+        "depot_fringe",
+        "college",
+        "church",
+        "BEML"
+      ]
+    },
+    {
+      "i": 14,
+      "from": "Swami Vivekananda Road",
+      "to": "Indiranagar",
+      "m": 1317,
+      "layout": "elevated",
+      "tags": [
+        "temples",
+        "schools",
+        "100ft_retail",
+        "Motherhood"
+      ]
+    },
+    {
+      "i": 15,
+      "from": "Indiranagar",
+      "to": "Halasuru",
+      "m": 1391,
+      "layout": "elevated",
+      "tags": [
+        "Ulsoor_lake",
+        "markets",
+        "temples",
+        "hospitals"
+      ]
+    },
+    {
+      "i": 16,
+      "from": "Halasuru",
+      "to": "Trinity",
+      "m": 1190,
+      "layout": "elevated",
+      "tags": [
+        "Holy_Trinity_Church",
+        "Lido_mall",
+        "hotels",
+        "Trinity_Circle"
+      ]
+    },
+    {
+      "i": 17,
+      "from": "Trinity",
+      "to": "Mahatma Gandhi Road",
+      "m": 1144,
+      "layout": "elevated",
+      "tags": [
+        "MG_Road_spine",
+        "Brigade_Road",
+        "Mayo_Hall",
+        "towers"
+      ]
+    },
+    {
+      "i": 18,
+      "from": "Mahatma Gandhi Road",
+      "to": "Cubbon Park",
+      "m": 1253,
+      "layout": "underground",
+      "tags": [
+        "tunnel",
+        "Cubbon_Park_surface",
+        "stadium_near"
+      ]
+    },
+    {
+      "i": 19,
+      "from": "Cubbon Park",
+      "to": "Dr. B.R. Ambedkar Stn., Vidhana Soudha",
+      "m": 787,
+      "layout": "underground",
+      "tags": [
+        "tunnel",
+        "Vidhana_Soudha",
+        "High_Court"
+      ]
+    },
+    {
+      "i": 20,
+      "from": "Dr. B.R. Ambedkar Stn., Vidhana Soudha",
+      "to": "Sir M. Visvesvaraya Stn., Central College",
+      "m": 940,
+      "layout": "underground",
+      "tags": [
+        "tunnel",
+        "Central_College",
+        "secretariat"
+      ]
+    },
+    {
+      "i": 21,
+      "from": "Sir M. Visvesvaraya Stn., Central College",
+      "to": "Nadaprabhu Kempegowda Stn., Majestic",
+      "m": 1330,
+      "layout": "underground",
+      "tags": [
+        "tunnel",
+        "Majestic_bus",
+        "KSRTC"
+      ]
+    },
+    {
+      "i": 22,
+      "from": "Nadaprabhu Kempegowda Stn., Majestic",
+      "to": "Krantivira Sangolli Rayanna Railway Station",
+      "m": 814,
+      "layout": "underground",
+      "tags": [
+        "tunnel",
+        "City_railway"
+      ]
+    },
+    {
+      "i": 23,
+      "from": "Krantivira Sangolli Rayanna Railway Station",
+      "to": "Magadi Road",
+      "m": 1089,
+      "layout": "elevated",
+      "tags": [
+        "tunnel_exit",
+        "markets",
+        "colleges",
+        "Cottonpet"
+      ]
+    },
+    {
+      "i": 24,
+      "from": "Magadi Road",
+      "to": "Sri Balagangadharanatha Swamiji Stn., Hosahalli",
+      "m": 1140,
+      "layout": "elevated",
+      "tags": [
+        "temples",
+        "GT_World_Mall",
+        "DMart",
+        "hospitals"
+      ]
+    },
+    {
+      "i": 25,
+      "from": "Sri Balagangadharanatha Swamiji Stn., Hosahalli",
+      "to": "Vijayanagara",
+      "m": 1043,
+      "layout": "elevated",
+      "tags": [
+        "Vijayanagar_hub",
+        "markets",
+        "hospitals",
+        "park"
+      ]
+    },
+    {
+      "i": 26,
+      "from": "Vijayanagara",
+      "to": "Attiguppe",
+      "m": 1091,
+      "layout": "elevated",
+      "tags": [
+        "Chord_Road",
+        "eye_hospitals",
+        "bus_stand",
+        "retail"
+      ]
+    },
+    {
+      "i": 27,
+      "from": "Attiguppe",
+      "to": "Deepanjali Nagar",
+      "m": 1221,
+      "layout": "elevated",
+      "tags": [
+        "schools",
+        "Mysore_Road",
+        "Vishal",
+        "library"
+      ]
+    },
+    {
+      "i": 28,
+      "from": "Deepanjali Nagar",
+      "to": "Mysuru Road",
+      "m": 1090,
+      "layout": "elevated",
+      "tags": [
+        "lake",
+        "BMTC_depot",
+        "BHEL",
+        "industrial"
+      ]
+    },
+    {
+      "i": 29,
+      "from": "Mysuru Road",
+      "to": "Pantharapalya\u2013Nayandahalli",
+      "m": 801,
+      "layout": "elevated",
+      "tags": [
+        "Divinity_Mall",
+        "junction",
+        "NICE"
+      ]
+    },
+    {
+      "i": 30,
+      "from": "Pantharapalya\u2013Nayandahalli",
+      "to": "Rajarajeshwari Nagar",
+      "m": 831,
+      "layout": "elevated",
+      "tags": [
+        "lake_park",
+        "RR_Nagar",
+        "PVR",
+        "mall"
+      ]
+    },
+    {
+      "i": 31,
+      "from": "Rajarajeshwari Nagar",
+      "to": "Jnanabharathi",
+      "m": 806,
+      "layout": "elevated",
+      "tags": [
+        "university_fringe",
+        "Gopalan_Arcade",
+        "Star_Bazaar"
+      ]
+    },
+    {
+      "i": 32,
+      "from": "Jnanabharathi",
+      "to": "Pattanagere",
+      "m": 1999,
+      "layout": "elevated",
+      "tags": [
+        "Bangalore_University",
+        "RVCE",
+        "ISI",
+        "campus_belt"
+      ]
+    },
+    {
+      "i": 33,
+      "from": "Pattanagere",
+      "to": "Kengeri Bus Terminal",
+      "m": 1595,
+      "layout": "elevated",
+      "tags": [
+        "RVCE",
+        "Kengeri_lake",
+        "TTMC",
+        "BDA"
+      ]
+    },
+    {
+      "i": 34,
+      "from": "Kengeri Bus Terminal",
+      "to": "Kengeri",
+      "m": 1527,
+      "layout": "elevated",
+      "tags": [
+        "town_centre",
+        "lake",
+        "police",
+        "rail"
+      ]
+    },
+    {
+      "i": 35,
+      "from": "Kengeri",
+      "to": "Challaghatta",
+      "m": 2073,
+      "layout": "elevated",
+      "tags": [
+        "peri_urban",
+        "Decathlon",
+        "temple",
+        "depot_terminus"
+      ]
+    }
+  ]
+}
