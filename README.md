@@ -153,7 +153,7 @@ The browser script intercepts requests to the built files (no HTTP listener), ch
 
 ## Credits
 
-Partner board is a placeholder ad slot; no third-party marks.
+Station-wall demo uses fictional **KANAKA FILTERS** (geometric mark only) after Whitefield — not a real brand; no BMRCL/Namma marks on the ad panel.
 
 | URL / source | Author / license | What is used |
 | --- | --- | --- |

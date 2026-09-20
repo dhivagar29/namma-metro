@@ -11,24 +11,31 @@ import { CHUNK_M, isEnclosed, nearbySlices } from './corridor';
 import { CorridorAssets, CorridorChunk } from './CorridorChunk';
 type Props = { simulation: MutableRefObject<Simulation>; control: MutableRefObject<Control>; paused: boolean };
 const PURPLE = '#71358f';
-function Sign({ text, sub, p, width = 8, color = PURPLE }: { text: string; sub: string; p: V3; width?: number; color?: string }) {
+function Sign({ text, sub, p, width = 8, color = PURPLE, mark }: { text: string; sub: string; p: V3; width?: number; color?: string; mark?: 'kanaka' }) {
  const texture = useMemo(() => {
   const canvas = document.createElement('canvas'); canvas.width = 1536; canvas.height = 320;
   const ctx = canvas.getContext('2d')!;
   const paint = () => {
    ctx.fillStyle = color; ctx.fillRect(0, 0, 1536, 320);
    ctx.fillStyle = '#e9e0c9'; ctx.fillRect(0, 304, 1536, 16);
+   // Fictional Kanaka Filters mark — geometric only, not a real trademark.
+   if (mark === 'kanaka') {
+    ctx.fillStyle = '#1f2d33'; ctx.beginPath(); ctx.moveTo(118, 70); ctx.lineTo(198, 70); ctx.lineTo(158, 138); ctx.closePath(); ctx.fill();
+    ctx.strokeStyle = '#f0c96a'; ctx.lineWidth = 10; ctx.beginPath(); ctx.arc(158, 168, 36, 0, Math.PI * 2); ctx.stroke();
+    ctx.fillStyle = '#f0c96a'; ctx.beginPath(); ctx.arc(158, 168, 14, 0, Math.PI * 2); ctx.fill();
+   }
    ctx.fillStyle = '#fff'; ctx.textAlign = 'center';
+   const textX = mark === 'kanaka' ? 860 : 768;
    let size = 74;
-   do { ctx.font = `600 ${size--}px Arial, "Noto Sans Kannada", "Nirmala UI", sans-serif`; } while (ctx.measureText(text).width > 1440 && size > 20);
-   ctx.fillText(text, 768, 144);
-   ctx.font = '48px "Noto Sans Kannada", "Nirmala UI", Tunga, sans-serif'; ctx.fillText(sub, 768, 248, 1440);
+   do { ctx.font = `600 ${size--}px Arial, "Noto Sans Kannada", "Nirmala UI", sans-serif`; } while (ctx.measureText(text).width > (mark === 'kanaka' ? 1180 : 1440) && size > 20);
+   ctx.fillText(text, textX, 144);
+   ctx.font = '48px "Noto Sans Kannada", "Nirmala UI", Tunga, sans-serif'; ctx.fillText(sub, textX, 248, mark === 'kanaka' ? 1180 : 1440);
   };
   paint();
   const result = new THREE.CanvasTexture(canvas); result.colorSpace = THREE.SRGBColorSpace; result.anisotropy = 4;
   result.userData.repaint = paint;
   return result;
- }, [text, sub, color]);
+ }, [text, sub, color, mark]);
  useEffect(() => {
   let disposed=false;
   const repaint=()=>{if(!disposed){texture.userData.repaint();texture.needsUpdate=true;}};
@@ -75,7 +82,7 @@ const Station = memo(function Station({ index, simulation }: { index: number; si
    <Sign text={stations[index]} sub={kannada[index]} p={[5,4.25,z]} width={6.1}/>
    <Sign text={stations[index]} sub={kannada[index]} p={[-9.2,4.25,z]} width={6.1}/>
   </group>)}
-  <Sign text={index===22 ? 'MAJESTIC  ↔  GREEN LINE' : index>=1 ? 'PARTNER BOARD' : 'NAMMA METRO · ನಮ್ಮ ಮೆಟ್ರೋ'} sub={index===22 ? 'ಹಸಿರು ಮಾರ್ಗ  /  INTERCHANGE' : index>=1 ? 'YOUR BRAND HERE · STATION WALL' : 'PURPLE LINE  /  ಚಲ್ಲಘಟ್ಟ →'} p={[-2.1,6.38,-36.6]} width={16}/>
+  <Sign text={index===22 ? 'MAJESTIC  ↔  GREEN LINE' : index>=1 ? 'KANAKA FILTERS' : 'NAMMA METRO · ನಮ್ಮ ಮೆಟ್ರೋ'} sub={index===22 ? 'ಹಸಿರು ಮಾರ್ಗ  /  INTERCHANGE' : index>=1 ? 'FICTIONAL DEMO · NOT A REAL BRAND' : 'PURPLE LINE  /  ಚಲ್ಲಘಟ್ಟ →'} p={[-2.1,6.38,-36.6]} width={16} mark={index>=1 && index!==22 ? 'kanaka' : undefined} color={index>=1 && index!==22 ? '#6b3d7a' : PURPLE}/>
   <Sign text="S" sub="6 CAR" p={[1.75,2.2,-.92]} width={.64} color="#283a40"/>
   <Sign text="EXIT →" sub="ನಿರ್ಗಮನ" p={[6.1,2.8,-20]} width={1.3} color="#24674c"/>
   <Passengers index={index} simulation={simulation}/>
