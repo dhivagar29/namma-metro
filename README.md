@@ -153,6 +153,8 @@ The browser script intercepts requests to the built files (no HTTP listener), ch
 
 ## Credits
 
+Partner board is a placeholder ad slot; no third-party marks.
+
 | URL / source | Author / license | What is used |
 | --- | --- | --- |
 | [`scripts/generate-audio.mjs`](scripts/generate-audio.mjs), [`public/audio/LICENSE.txt`](public/audio/LICENSE.txt) | Original procedural synthesis; [CC0 1.0](https://creativecommons.org/publicdomain/zero/1.0/) for generated WAVs | All nine sound assets; no recordings or third-party samples |

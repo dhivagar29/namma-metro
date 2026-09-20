@@ -75,7 +75,7 @@ const Station = memo(function Station({ index, simulation }: { index: number; si
    <Sign text={stations[index]} sub={kannada[index]} p={[5,4.25,z]} width={6.1}/>
    <Sign text={stations[index]} sub={kannada[index]} p={[-9.2,4.25,z]} width={6.1}/>
   </group>)}
-  <Sign text={index===22 ? 'MAJESTIC  ↔  GREEN LINE' : 'NAMMA METRO · ನಮ್ಮ ಮೆಟ್ರೋ'} sub={index===22 ? 'ಹಸಿರು ಮಾರ್ಗ  /  INTERCHANGE' : 'PURPLE LINE  /  ಚಲ್ಲಘಟ್ಟ →'} p={[-2.1,6.38,-36.6]} width={16}/>
+  <Sign text={index===22 ? 'MAJESTIC  ↔  GREEN LINE' : index>=1 ? 'PARTNER BOARD' : 'NAMMA METRO · ನಮ್ಮ ಮೆಟ್ರೋ'} sub={index===22 ? 'ಹಸಿರು ಮಾರ್ಗ  /  INTERCHANGE' : index>=1 ? 'YOUR BRAND HERE · STATION WALL' : 'PURPLE LINE  /  ಚಲ್ಲಘಟ್ಟ →'} p={[-2.1,6.38,-36.6]} width={16}/>
   <Sign text="S" sub="6 CAR" p={[1.75,2.2,-.92]} width={.64} color="#283a40"/>
   <Sign text="EXIT →" sub="ನಿರ್ಗಮನ" p={[6.1,2.8,-20]} width={1.3} color="#24674c"/>
   <Passengers index={index} simulation={simulation}/>
