@@ -44,12 +44,31 @@ try {
  await page.keyboard.press('Escape');assert.equal(await page.getByRole('button',{name:'Resume duty'}).isVisible(),true);
  await page.screenshot({path:'artifacts/04-paused.png'});
  await page.getByRole('button',{name:'Resume duty'}).click();
- await page.getByRole('button',{name:'All 37 stops'}).click();
- assert.equal(await page.locator('.full-route li').count(),37);
- await page.getByRole('button',{name:'Close route'}).click();
- await page.setViewportSize({width:390,height:844});await page.screenshot({path:'artifacts/05-mobile.png'});
- assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
+ assert.equal(await page.locator('.route-track i').count(),37);
+ assert.equal(await page.locator('.upcoming span').count(),3); // label + two next stops
+ for (const [width,height] of [[1440,1000],[1366,768],[1024,600],[844,390],[390,844]]) {
+  await page.setViewportSize({width,height});
+  const layout=await page.evaluate(()=>{
+   const desk=document.querySelector('.console'), rect=desk.getBoundingClientRect();
+   const scrollable=[...document.querySelectorAll('body *')].filter(el=>{
+    const css=getComputedStyle(el);
+    return /(auto|scroll)/.test(`${css.overflowX} ${css.overflowY}`);
+   }).map(el=>el.className);
+   const controls=[...desk.querySelectorAll('button')].map(el=>{
+    const r=el.getBoundingClientRect();
+    return r.top>=rect.top && r.bottom<=innerHeight && r.left>=0 && r.right<=innerWidth;
+   });
+   return {height:rect.height,bottom:rect.bottom,scrollable,controls,
+    pageScroll:document.documentElement.scrollHeight>innerHeight || document.documentElement.scrollWidth>innerWidth};
+  });
+  assert.ok(layout.height<=height*.2+.5,`${width}x${height}: HUD ${layout.height}px`);
+  assert.equal(layout.bottom,height);
+  assert.equal(layout.pageScroll,false);
+  assert.deepEqual(layout.scrollable,[]);
+  assert.ok(layout.controls.every(Boolean),`${width}x${height}: clipped controls`);
+ }
+ await page.screenshot({path:'artifacts/05-mobile.png'});
  assert.equal([...files].filter(name=>name.endsWith('.wav')).length,9);
  assert.deepEqual(errors,[]);
- console.log('PASS: render, departure, inertia, door interlock, emergency keyboard input, mute, pause, 37-stop route, mobile, 9 WAVs; screenshots in artifacts/.');
+ console.log('PASS: render, departure, inertia, door interlock, emergency keyboard input, mute, pause, compact 37-stop strip, HUD ≤20vh at five viewport sizes, no scrollbars, mobile, 9 WAVs; screenshots in artifacts/.');
 } finally {await browser.close();}

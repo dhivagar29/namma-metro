@@ -10,7 +10,7 @@ const controls:Control[]=['brake','coast','power'];
 function App() {
  const sim=useRef(initialState()),input=useRef<Control>('coast'),mutedRef=useRef(false);
  const [view,setView]=useState(sim.current),[started,setStarted]=useState(false),[paused,setPaused]=useState(false),[muted,setMuted]=useState(false),[control,setControl]=useState<Control>('coast');
- const [pa,setPa]=useState<number|null>(null),[routeOpen,setRouteOpen]=useState(false);
+ const [pa,setPa]=useState<number|null>(null);
  const announced=useRef(new Set<number>());
  const setDrive=useCallback((value:Control)=>{input.current=value;setControl(value);},[]);
  const doors=useCallback(()=>{const next=toggleDoors(sim.current);sim.current=next;setView(next);setDrive('coast');},[setDrive]);
@@ -56,43 +56,38 @@ function App() {
   frame=requestAnimationFrame(tick);return()=>cancelAnimationFrame(frame);
  },[started,paused,view.complete,setDrive]);
  const distance=distanceToStop(view),boarding=view.doors&&!view.serviced,closing=view.closing>0;
- const start=()=>{sim.current=initialState();setView(sim.current);setStarted(true);setPaused(false);setPa(null);setRouteOpen(false);announced.current.clear();setDrive('coast');audio.start(sim.current);};
+ const start=()=>{sim.current=initialState();setView(sim.current);setStarted(true);setPaused(false);setPa(null);announced.current.clear();setDrive('coast');audio.start(sim.current);};
  const status=view.complete?'DUTY COMPLETE':paused?'DUTY PAUSED':closing?'DOORS CLOSING · STAND CLEAR':boarding?'PASSENGERS BOARDING':view.doors?'BOARDING COMPLETE':inZone(view)?'ON MARKER · OPEN DOORS':view.atp?'ATP · STATION PROTECTION':control==='power'?'TRACTION APPLIED':control==='brake'||control==='emergency'?'BRAKING':'COASTING';
  const doorDisabled=!started||paused||view.complete||closing||(view.doors?!view.serviced:!inZone(view));
  const speed=Math.round(view.speed*3.6);
  return <main>
   <div className="world"><World simulation={sim} control={input} paused={!started||paused||view.complete}/></div>
   <div className="glass-vignette"/>
-  <header>
-   <div className="brand"><span className="logo" aria-hidden="true">m</span><div>NAMMA METRO<small lang="kn">ನಮ್ಮ ಮೆಟ್ರೋ <span> / DRIVER SIMULATOR</span></small></div></div>
-   <div className="service"><i/>PURPLE LINE <span>WHITEFIELD → CHALLAGHATTA</span></div>
-   <div className="header-actions"><button onClick={mute} aria-pressed={muted} aria-label={muted?'Unmute sound':'Mute sound'}>{muted?'◌ Sound off':'◖ Sound on'} <kbd>M</kbd></button><button onClick={()=>setPaused(v=>!v)} disabled={!started||view.complete}>{paused?'Resume':'Pause'} <kbd>ESC</kbd></button></div>
-  </header>
   <section className="console" aria-label="Driver dashboard">
-   <div className="console-top"><span>BMRCL <b>DRIVER DESK / 06</b></span><span className="console-status">● {status}</span><span lang="kn">ನಮ್ಮ ಮೆಟ್ರೋ</span><div className="view-label"><span className="live-dot"/> CAB 01 / SEATED DRIVER<small>BENGALURU · DUSK SERVICE</small><span className="cab-tag">6 CAR · PURPLE LIVERY</span></div></div>
+   <header className="console-top">
+    <span className="brand">NAMMA METRO <small lang="kn">ನಮ್ಮ ಮೆಟ್ರೋ</small></span>
+    <span className="console-status">● {status}</span>
+    <div className="header-actions"><button onClick={mute} aria-pressed={muted} aria-label={muted?'Unmute sound':'Mute sound'}>{muted?'Sound off':'Sound on'} <kbd>M</kbd></button><button onClick={()=>setPaused(v=>!v)} disabled={!started||view.complete}>{paused?'Resume':'Pause'} <kbd>ESC</kbd></button></div>
+   </header>
    <div className="instruments">
-    <aside className={`route-card ${routeOpen?'expanded':''}`} aria-label="Purple Line route">
-     <div className="eyebrow">WESTBOUND <span>PL / 01</span></div>
-     <h2>To Challaghatta <span>↗</span></h2><p>Every station. One continuous journey.</p>
-     <div className="route-track" aria-label={`${view.stops} of 37 stations served`}>{stations.map((name,i)=><i key={name} title={`${i+1}. ${name}`} className={i<view.stops?'done':i===view.target?'active':''}/>)}</div>
-     <div className="route-progress"><span>{String(view.stops).padStart(2,'0')} / 37 served</span><span>{(view.position/1000).toFixed(1)} / {(totalLengthM/1000).toFixed(3)} km</span></div>
-     <div className="upcoming">{stations.slice(Math.max(0,view.target-1),Math.min(37,view.target+3)).map(name=>{const i=stations.indexOf(name);return <div key={name} className={i===view.target?'current':''}><span>{i<view.stops?'✓':String(i+1).padStart(2,'0')}</span><b>{name}</b>{i===view.target&&<small>←</small>}</div>;})}</div>
-     <div className="route-foot"><span>{stationType(view.target)}{view.target===22?' · ↔ Green Line':' · Bengaluru'}</span><button onClick={()=>setRouteOpen(v=>!v)} aria-expanded={routeOpen} aria-controls="all-stations">{routeOpen?'Close route':'All 37 stops'}</button></div>
-     {routeOpen&&<ol id="all-stations" className="full-route">{stations.map((name,i)=><li key={name} className={i===view.target?'current':''}>{name}{i<view.stops?' ✓':''}</li>)}</ol>}
-    </aside>
-    <div className="journey-panel">
-     <div className="destination"><div className="eyebrow">{view.doors?'AT STATION':'NEXT STATION'} <span>● PURPLE / {String(view.target+1).padStart(2,'0')}</span></div><h1>{stations[view.target]}</h1><div className="kannada-destination" lang="kn">{kannada[view.target]}</div><div className="trip-stats"><span><b>{view.passengers}</b> boarded</span><span><b>{clock(view.elapsed)}</b> duty</span><span className={view.atp?'amber':'green'}>● ATP {view.atp?'BRAKE':'READY'}</span></div></div>
-     {started&&<div className={`alignment ${view.atp?'protecting':''}`}><span>{status}</span><strong>{closing?`${view.closing.toFixed(1)} s`:view.doors?`Platform ${String(view.target+1).padStart(2,'0')}`:`${Math.max(0,Math.round(distance))} m`}</strong><small>{closing?'Warning active · traction inhibited':boarding?`${Math.ceil(Math.max(0,DWELL-view.dwell))}s · passenger exchange`:view.doors?'Press D to close · wait for departure tone':inZone(view)?'Within ±8 m · press D to open':`Brake guide ${Math.ceil(view.speed**2/2.1+view.speed*.6)} m · limit 80 km/h`}</small>{boarding&&<div className="boarding-progress"><i style={{width:`${view.dwell/DWELL*100}%`}}/></div>}{!view.doors&&distance<100&&<div className="berth-track"><i style={{left:`${Math.max(0,Math.min(100,(1-distance/100)*100))}%`}}/><span>100 m</span><b>STOP</b></div>}</div>}
-     {pa!==null&&started&&!paused&&<div className="pa-caption" role="status"><span>◖ STATION ANNOUNCEMENT</span><b>Next station: {stations[pa]}</b><small lang="kn">ಮುಂದಿನ ನಿಲ್ದಾಣ: {kannada[pa]}</small></div>}
+    <div className="speedometer"><div className="eyebrow">SPEED</div><strong>{speed.toString().padStart(2,'0')}<small>km/h</small></strong><div className="speed-bar" role="meter" aria-label="Train speed" aria-valuenow={speed} aria-valuemin={0} aria-valuemax={80}><i style={{width:`${speed/80*100}%`}}/></div><span className="speed-limit">LIMIT 80</span></div>
+    <div className="destination"><div className="eyebrow">{view.doors?'AT STATION':'NEXT STATION'} <span>{String(view.target+1).padStart(2,'0')} / 37 · {stationType(view.target)}</span></div><h1 className={stations[view.target].length>32?'long-name':undefined}>{stations[view.target]}</h1><div className="kannada-destination" lang="kn">{kannada[view.target]}</div><div className="trip-stats"><span><b>{view.passengers}</b> boarded</span><span><b>{clock(view.elapsed)}</b> duty</span><span className={view.atp?'amber':'green'}>● ATP {view.atp?'BRAKE':'READY'}</span></div></div>
+    <div className={`alignment ${view.atp?'protecting':''}`}>
+     <span className="eyebrow">TO STOP <span className={view.atp?'amber':'green'}>{view.atp?'ATP BRAKE':view.doors||closing?'INTERLOCK':control==='power'?'TRACTION':control==='coast'?'COAST':'BRAKE'}</span></span>
+     <strong>{Math.max(0,Math.round(distance))}<small> m</small></strong>
+     <small>{closing?`${view.closing.toFixed(1)}s · stand clear`:boarding?`${Math.ceil(Math.max(0,DWELL-view.dwell))}s · passenger exchange`:view.doors?'Boarding complete · close doors':inZone(view)?'On marker · open doors':`Brake guide ${Math.ceil(view.speed**2/2.1+view.speed*.6)} m`}</small>
+     <div className="boarding-progress"><i style={{width:`${view.doors?view.dwell/DWELL*100:Math.max(0,Math.min(100,100-distance))}%`}}/></div>
+     <div className="pa-caption" role="status">{pa!==null&&started&&!paused?<>◖ Next: {stations[pa]} <span lang="kn">{kannada[pa]}</span></>:'6 CAR · MANUAL / CAB 01'}</div>
     </div>
-    <div className="driving-controls">
-     <div className="speedometer"><div className="eyebrow">TRAIN SPEED <span>ATO OFF</span></div><div className="speed-dial" style={{'--speed':`${speed/80*240}deg`} as React.CSSProperties}><strong>{speed.toString().padStart(2,'0')}<small>km/h</small></strong></div><div className="scale"><span>0</span><span>MANUAL</span><span>80</span></div></div>
-     <div className="door-controls"><div className="lamp-row"><span className={view.doors?'amber':'green'}>● DOORS {closing?'CLOSING':view.doors?'OPEN':'LOCKED'}</span><span className={view.atp?'amber':'dim'}>● TRIP</span></div><button onClick={doors} disabled={doorDisabled}>{closing?'Stand clear…':boarding?'Boarding…':view.doors?'Close doors':'Open doors'} <kbd>D</kbd></button><small>{closing?'Wait for the departure tone':boarding?'Passenger exchange in progress':view.doors?'Boarding complete · ready to close':inZone(view)?'Stopped and aligned · doors enabled':'Doors interlocked while moving'}</small><div className="passenger-tick">{boarding?'◦ ◦ ◦':'✓'} <span>{view.stops} station{view.stops===1?'':'s'} served</span></div></div>
-     <div className="master-control"><div className="eyebrow">MASTER CONTROLLER <span>MC / 01</span></div><div className="notches">{controls.map(value=><button key={value} className={control===value?'selected':''} aria-pressed={control===value} disabled={!started||paused||view.complete} onClick={()=>setDrive(value)}>{value==='brake'?'S / ↓':value==='power'?'W / ↑':'○'}<span>{value}</span></button>)}</div><button className={`emergency ${control==='emergency'?'engaged':''}`} disabled={!started||paused||view.complete} onClick={()=>setDrive(control==='emergency'?'coast':'emergency')}>● Emergency brake <kbd>SPACE</kbd></button></div>
-    </div>
+    <div className="door-controls"><div className="lamp-row"><span className={view.doors||closing?'amber':'green'}>● DOORS {closing?'CLOSING':view.doors?'OPEN':'LOCKED'}</span></div><button onClick={doors} disabled={doorDisabled}>{closing?'Stand clear…':boarding?'Boarding…':view.doors?'Close doors':'Open doors'} <kbd>D</kbd></button><small>{closing?'Wait for departure tone':boarding?'Passenger exchange':view.doors?'Ready to close':inZone(view)?'Stopped and aligned':'Doors locked · ready'}</small></div>
+    <div className="master-control"><div className="eyebrow">MASTER CONTROLLER <span>HOLD W / S</span></div><div className="notches">{controls.map(value=><button key={value} className={control===value?'selected':''} aria-pressed={control===value} disabled={!started||paused||view.complete} onClick={()=>setDrive(value)}>{value==='brake'?'S / ↓':value==='power'?'W / ↑':'○'}<span>{value}</span></button>)}</div><button aria-label="Emergency brake (Space)" className={`emergency ${control==='emergency'?'engaged':''}`} disabled={!started||paused||view.complete} onClick={()=>setDrive(control==='emergency'?'coast':'emergency')}>● Emergency brake <kbd>SPACE</kbd></button></div>
    </div>
+   <aside className="route-card" aria-label="Purple Line route">
+    <div className="route-progress"><b>WESTBOUND → CHALLAGHATTA</b><span>{String(view.stops).padStart(2,'0')} / 37 served</span><span>{(view.position/1000).toFixed(1)} / {(totalLengthM/1000).toFixed(3)} km</span></div>
+    <div className="route-track" aria-label={`${view.stops} of 37 stations served`}>{stations.map((name,i)=><i key={name} title={`${i+1}. ${name}`} className={i<view.stops?'done':i===view.target?'active':''}/>)}</div>
+    <div className="upcoming"><span>THEN</span>{stations.slice(view.target+1,view.target+3).map(name=><span key={name}>{name}</span>)}{view.target===36&&<span>End of line</span>}</div>
+   </aside>
   </section>
-  <footer><span><kbd>W / ↑</kbd> POWER <kbd>S / ↓</kbd> BRAKE <kbd>SPACE</kbd> E-BRAKE <kbd>D</kbd> DOORS</span><span>HOLD TO DRIVE · RELEASE TO COAST · DRAG TO LOOK · DOUBLE-CLICK TO CENTRE</span></footer>
   {(!started||paused||view.complete)&&<div className={`modal-shade ${!started?'welcome':''}`}><section className="modal" role="dialog" aria-modal="true" aria-labelledby="dialog-title">
    <div className="eyebrow">ನಮ್ಮ ಮೆಟ್ರೋ <span>DRIVER OPERATIONS / V2</span></div><div className="welcome-line">PURPLE LINE <span>ಬೆಂಗಳೂರು</span></div>
    <h2 id="dialog-title">{view.complete?'End of the line.':paused?'Duty on hold.':<>Your cab.<br/>Your city.</>}</h2>

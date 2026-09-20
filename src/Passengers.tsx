@@ -36,7 +36,7 @@ function drapeGeometry() {
  return { positions: new Float32Array(vertices), indices: new Uint16Array(indices) };
 }
 
-function makeCrowd(index: number) {
+export function makeCrowd(index: number) {
  const counts: Record<Shape, number> = { round: 0, taper: 0, cloth: 0, detail: 0, drape: 0 };
  const travelers: Traveler[] = [];
  const dummy = new THREE.Object3D();
@@ -47,11 +47,18 @@ function makeCrowd(index: number) {
   const trousers = kurta ? '#d6c6aa' : seed % 2 ? '#364761' : '#424246';
   const boarder = i < 18, opposite = i >= 23, row = i % 3, lane = Math.floor(i / 3);
   const doorZ = 3.1 + lane * 20;
+  // The seated camera is at z=+3 and looks down -Z. Positive platform Z is
+  // behind the cab at the stop marker, so keep the leading queue ahead of it.
+  // These positions remain on the platform, clear of its x=2.12 edge/columns.
+  const leadingQueue = boarder && lane === 0;
+  const waitingAhead = !boarder && !opposite;
   const traveler: Traveler = {
    parts: [], boarder, saree, phone: outfit === 2 || outfit === 4,
-   x: boarder ? 3.05 + row * .67 : opposite ? -7.3 - (i % 2) * .8 : 3.15 + (i % 2) * .9,
-   z: boarder ? (lane === 0 ? -2.5 + row * 1.05 : doorZ - 1.3 + row * .35) : opposite ? -24 + (i - 23) * 15.5 : -27 + (i - 18) * 5.2,
-   doorZ, facing: opposite ? Math.PI / 2 - .2 : -Math.PI / 2 + (i % 3 - 1) * .22,
+   x: leadingQueue ? 2.85 + row * .38 : boarder ? 3.05 + row * .67 : opposite ? -7.3 - (i % 2) * .8 : 2.85 + (i % 2) * .65,
+   z: leadingQueue ? -8 - row * 2.2 : boarder ? doorZ - 1.3 + row * .35 : opposite ? -24 + (i - 23) * 15.5 : -12 - (i - 18) * 3.6,
+   // Waiting travelers face partly toward the arriving cab; they stay visible
+   // throughout dwell, including after the boarding queue has entered the train.
+   doorZ, facing: waitingAhead ? -.45 + (i % 3) * .3 : opposite ? Math.PI / 2 - .2 : -Math.PI / 2 + (i % 3 - 1) * .22,
    height: .94 + (seed % 5) * .035, width: .92 + (seed % 4) * .055,
    delay: row * .32 + (lane % 3) * .1, phase: seed * 1.71,
   };
