@@ -1,5 +1,12 @@
 import { corridor, nearbySlices, type CorridorHop } from './corridor';
 import { landmarkPlacements } from './landmarks';
+import type { BillboardSource } from './Billboard';
+
+const HOP_1_SOLD_SOURCE: BillboardSource = { kind: 'image', url: '/textures/hop1-swiggy-taste-meets-speed.png' };
+
+export function soldBoardSource(hopIndex: number): BillboardSource | undefined {
+ return hopIndex === 0 ? HOP_1_SOLD_SOURCE : undefined;
+}
 
 export const LED_COPY = {
  title: 'ADVERTISE HERE', sub: 'FICTIONAL DEMO · SWAP IMAGE/GIF LATER', loop: 'SAMPLE LOOP', tagline: 'YOUR NEXT BIG IDEA',
@@ -29,5 +36,5 @@ export function nearbyBillboards(distance: number): BillboardPlacement[] {
  const live = new Set(boards.filter(b => b.hopIndex % 2 === 1)
   .sort((a, b) => Math.abs(a.distance - distance) - Math.abs(b.distance - distance))
   .slice(0, MAX_ANIMATED_BOARDS).map(b => b.hopIndex));
- return boards.map(b => ({ ...b, animated: live.has(b.hopIndex) }));
+ return boards.map(b => ({ ...b, animated: !soldBoardSource(b.hopIndex) && live.has(b.hopIndex) }));
 }

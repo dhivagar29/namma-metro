@@ -10,7 +10,7 @@ import { Blocks, Box, type Block, type V3 } from './geometry';
 import { CHUNK_M, isEnclosed, nearbySlices } from './corridor';
 import { CorridorAssets, CorridorChunk } from './CorridorChunk';
 import { Billboard } from './Billboard';
-import { nearbyBillboards } from './billboards';
+import { nearbyBillboards, soldBoardSource } from './billboards';
 type Props = { simulation: MutableRefObject<Simulation>; control: MutableRefObject<Control>; paused: boolean };
 const PURPLE = '#71358f';
 function Sign({ text, sub, p, width = 8, color = PURPLE, mark }: { text: string; sub: string; p: V3; width?: number; color?: string; mark?: 'kanaka' }) {
@@ -154,7 +154,7 @@ function Scenery({ simulation, control, paused }: Props) {
   <mesh ref={sun} position={[-145,78,-600]}><sphereGeometry args={[18,24,16]}/><meshBasicMaterial color="#ffd6a0" fog={false}/></mesh>
   <Track simulation={simulation}/>
   <PassingMetro simulation={simulation}/>
-  <group ref={moving}><CorridorAssets>{slices.map(slice=><CorridorChunk key={slice.key} slice={slice}/>)}</CorridorAssets>{billboards.map(board=><Billboard key={board.hopIndex} board={board} paused={paused}/>)}{nearby.map(index=><Station key={index} index={index} simulation={simulation}/>)}</group>
+  <group ref={moving}><CorridorAssets>{slices.map(slice=><CorridorChunk key={slice.key} slice={slice}/>)}</CorridorAssets>{billboards.map(board=><Billboard key={board.hopIndex} board={board} paused={paused} source={soldBoardSource(board.hopIndex)}/>)}{nearby.map(index=><Station key={index} index={index} simulation={simulation}/>)}</group>
   <Cab simulation={simulation} control={control}/>
  </>;
 }

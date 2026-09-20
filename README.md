@@ -153,7 +153,7 @@ The browser script intercepts requests to the built files (no HTTP listener), ch
 
 ## Credits
 
-Mid-hop LEDs are fictional **ADVERTISE HERE** demo slots, with a procedural **SAMPLE LOOP** on alternating hops. Screens stream with the corridor; at most two animate at 10 fps. To swap content without remeshing, pass `source={{ kind: 'image', url: '/textures/demo.png' }}` to `Billboard`, or `source={{ kind: 'canvas', canvas, paint: seconds => drawFrame(seconds) }}` for animation (including decoded GIF frames). Keep sources stable and load any future GIF decoder only for mounted live slots; a GIF URL alone is a still image slot. Canvas producers own decoder cleanup; boards dispose their GPU textures/materials.
+The first mid-hop LED (hop 0, Whitefield → Hopefarm Channasandra) shows the sold Swiggy “Taste Meets Speed” still creative supplied by Dhivagar; all other mid-hop LEDs remain **ADVERTISE HERE** demo slots, with a procedural **SAMPLE LOOP** on alternating hops. Screens stream with the corridor; at most two animate at 10 fps. To swap content without remeshing, pass `source={{ kind: 'image', url: '/textures/demo.png' }}` to `Billboard`, or `source={{ kind: 'canvas', canvas, paint: seconds => drawFrame(seconds) }}` for animation (including decoded GIF frames). Keep sources stable and load any future GIF decoder only for mounted live slots; a GIF URL alone is a still image slot. Canvas producers own decoder cleanup; boards dispose their GPU textures/materials.
 
 Station-wall demo uses fictional **KANAKA FILTERS** (geometric mark only) after Whitefield — not a real brand; no BMRCL/Namma marks on the ad panel.
 

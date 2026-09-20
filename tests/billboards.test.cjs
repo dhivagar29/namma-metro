@@ -17,7 +17,19 @@ function load(name) {
 const { corridor, nearbySlices } = load('corridor');
 const { totalLengthM } = load('routes');
 const { landmarkPlacements } = load('landmarks');
-const { boardSide, boardForHop, nearbyBillboards, MAX_ANIMATED_BOARDS, LED_COPY, BOARD_WIDTH, BOARD_HEIGHT } = load('billboards');
+const { boardSide, boardForHop, nearbyBillboards, soldBoardSource, MAX_ANIMATED_BOARDS, LED_COPY, BOARD_WIDTH, BOARD_HEIGHT } = load('billboards');
+
+test('only hop 0 has the supplied sold still image; all other hops retain demo sources', () => {
+ assert.deepEqual(soldBoardSource(0), { kind: 'image', url: '/textures/hop1-swiggy-taste-meets-speed.png' });
+ assert.equal(soldBoardSource(0), soldBoardSource(0), 'keep the source stable across renders');
+ assert.ok(fs.existsSync(`public${soldBoardSource(0).url}`));
+ for (const hop of corridor.slice(1)) assert.equal(soldBoardSource(hop.i), undefined);
+ assert.equal(soldBoardSource(-1), undefined);
+ assert.equal(soldBoardSource(corridor.length), undefined);
+ const board = boardForHop(corridor[0]);
+ assert.equal(board.animated, false);
+ assert.equal(nearbyBillboards(board.distance).find(b => b.hopIndex === 0)?.animated, false);
+});
 
 test('hop parity alternates one side; outdoor boards stay mid-span clear of both tracks and landmark anchors', () => {
  for (const hop of corridor) {
@@ -54,10 +66,11 @@ test('streaming uses the corridor window and caps animated screens throughout th
  }
  assert.ok(sawLoop && sawStill);
 });
-test('all LED copy is fictional with the required placeholder and sample loop', () => {
+test('unsold LED copy stays fictional with the required placeholder and sample loop', () => {
  assert.equal(LED_COPY.title, 'ADVERTISE HERE');
  assert.equal(LED_COPY.sub, 'FICTIONAL DEMO · SWAP IMAGE/GIF LATER');
  assert.equal(LED_COPY.loop, 'SAMPLE LOOP');
+ assert.equal(LED_COPY.tagline, 'YOUR NEXT BIG IDEA');
  assert.doesNotMatch(Object.values(LED_COPY).join(' '), /BMRCL|NAMMA|KANAKA/i);
 });
 test('both board faces point into the approach and fit the forward cab view for a 60 m approach interval', () => {
