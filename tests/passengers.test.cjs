@@ -53,3 +53,21 @@ test('waiting crowd stays in view during approach and throughout completed board
   }
  }
 });
+
+const { boardingProgress, BOARDING_START, BOARDING_END, DWELL } = load('simulation');
+test('crowd stays capped and staggered, waits for door opening, and clears before close permission', () => {
+ for(let index=0;index<37;index++) {
+  const {travelers,counts}=makeCrowd(index);
+  assert.equal(travelers.length,32);assert.equal(travelers.filter(t=>t.boarder).length,18);
+  assert.ok(Object.values(counts).reduce((a,b)=>a+b,0)<=1900,'silhouette variety adds no new crowd');
+  assert.ok(new Set(travelers.map(t=>t.height)).size>=5);
+  const boarders=travelers.filter(t=>t.boarder);
+  assert.ok(new Set(boarders.map(t=>t.delay)).size>=6);
+  for(const traveler of boarders) {
+   assert.equal(boardingProgress(BOARDING_START,traveler.delay),0);
+   assert.ok(boardingProgress(1.5,traveler.delay)<.55,'the 1.5-second opening motor finishes before anyone crosses');
+   assert.equal(boardingProgress(BOARDING_END,traveler.delay),1);
+   assert.equal(boardingProgress(DWELL,traveler.delay),1);
+  }
+ }
+});

@@ -52,6 +52,14 @@ Manual traction and service braking ramp smoothly; coasting preserves momentum. 
 
 Procedural scene geometry and canvas-painted signs are original work. The supplied Wikimedia diagrams informed Purple/Green wayfinding and the compact route strip; source images are not loaded into the game. The English station names remain the supplied route contract. Distances, terrain transitions, architecture, and ATP are illustrative, not surveyed operating infrastructure or a training tool.
 
+## Liveliness
+
+Slower traction build, a distinct service-brake bite and gentle final release give the train more weight. Cab sway, panel vibration, P/N/B lamps and brake glow follow speed and applied effort. The existing desk strip explains door/ATP inhibition and shows signed berth distance: **clean manual stop within ±5 m**, aligned within ±8 m, or **ATP-assisted stop**, retained through boarding.
+
+The opposing set has a continuous approach, headlamp spill and matching whoosh. **24 moving vehicles / 144 instances / two draws** replace parked road traffic, with tunnel exclusion and recycling outside the fog. Dusk progresses gently, portal lighting/fog blend, and landmark plates gain contrast. Crowds stay at **32 people / five batches per station**, with varied silhouettes, staggered boarding after door release and everyone clear before closing; distant updates drop to 10 Hz.
+
+Motor load, brake effort, rail bed and joint ticks follow the simulation. The **nine-WAV pack is unchanged**; procedural rail/pass buffers add under **128 KiB** in memory after duty starts. Mute/pause cancel one-shots and speech; restart clears old levels. Reused lighting adds no lights. No new assets, shadows, postprocessing, paid APIs or cloud work. Console ≤20dvh, DPR ≤1.5, route metres, Kanaka, hop-0 Swiggy and LED rules remain locked. A scoreboard and denser crowds are deferred for budget. Tests/build pass; browser launch remains blocked here, so measured 60fps and listening still need operator verification.
+
 ## Soundscape
 
 Nine original, deterministic **22,050 Hz PCM WAVs** live in `public/audio/`. Regenerate them with **`npm run audio:generate`**; Node alone is sufficient.
@@ -61,15 +69,16 @@ Nine original, deterministic **22,050 Hz PCM WAVs** live in `public/audio/`. Reg
 | Door open / close motors | Valid door opening; final 1.2 seconds of closing |
 | Closing warning | Five pulses across the closing interlock |
 | Departure beep | Doors physically lock; next consecutive station becomes active |
-| Traction hum | Speed-dependent playback rate and level; quieter when coasting |
-| Soft brake hiss | Moving under service/emergency brake or ATP |
+| Traction hum | Applied load and speed set level/pitch; quieter on power cut, with a separate rolling bed |
+| Soft brake hiss | Follows applied service/emergency/ATP brake effort, softening at standstill |
 | PA chime + speech | Once per approach, **560 m before the next marker**, ahead of the braking zone |
 | Platform murmur | Indistinct synthesized crowd formants while doors are open |
-| Passenger ticks | Boarding progress and completed passenger exchange |
+| Passenger ticks | Shared boarding phases and completed passenger exchange |
+| Rail bed / joint ticks / pass-by air | Seeded Web Audio synthesis, speed/distance coupled; no extra WAV downloads |
 
 PA says **“Next station: <exact English name>”**, then Kannada with an installed `kn-IN` voice, or **“Mundina nildaana: <name>”** through the available English voice. English and Kannada captions remain visible during approach, including when muted. Web Speech voices are supplied by the browser/OS; if speech is unavailable the PA chime and captions still work. These are synthesized announcements, not official BMRCL recordings.
 
-A master Web Audio bus handles all loops and effects; PA ducks the other sounds. M cancels pending/current speech and mutes the bus. Pause cancels one-shots and PA, and silences loops; resume reschedules interrupted PA. Restart clears the old station announcement and reuses the existing loop sources. Asset failures fall back to synthesized tones and traction without stopping the sim.
+A master Web Audio bus handles all loops and effects; PA ducks the other sounds. M cancels pending/current speech and one-shots and mutes the bus; unmute does not replay muted events. Pause cancels one-shots and PA, and silences loops; resume reschedules interrupted PA. Restart clears the old station announcement and reuses the existing loop sources. Asset failures fall back to synthesized tones and traction without stopping the sim.
 
 Kannada uses system fonts plus an optional, non-blocking **Noto Sans Kannada** stylesheet from Google Fonts. Canvas signs repaint when the font loads. No game geometry or sound depends on that network request; without a Kannada system font or the optional download, glyph quality is browser-dependent.
 
@@ -131,7 +140,7 @@ The target is desktop ~60 fps. **Frame rate has not been measured in this sandbo
 
 ## Verification
 
-`npm test` passes **31 individual tests across four files** (the sandbox runner summarizes files; running each file directly reports the individual cases). The original 18 tests cover the exact 37-station contract, terrain, complete continuous duty, speed cap, inertia, stop tolerance, closing/boarding/traction interlocks, ATP capture across multiple speeds and time steps, all 36 pre-arrival announcements/departures, WAV integrity, mute/pause/resume/restart, and unavailable audio assets. Audio lifecycle tests use Web Audio/Speech mocks; they verify control flow, not audible quality.
+`npm test` passes **47 individual tests across six files** (the sandbox runner summarizes files; running each file directly reports the individual cases). The route and audio tests cover the exact 37-station contract, terrain, complete continuous duty, speed cap, inertia, stop tolerance, closing/boarding/traction interlocks, ATP capture across multiple speeds and time steps, all 36 pre-arrival announcements/departures, WAV integrity, mute/pause/resume/restart, and unavailable audio assets. Audio lifecycle tests use Web Audio/Speech mocks; they verify control flow, not audible quality.
 
 The 13 corridor tests cover bible alignment, exact boundaries, gap-free bounded streaming, deterministic placement, complete tag coverage, distinct elevated geometry, underground surface exclusion, the KSR exit, full platform chambers, radial raycasts against both tunnel linings, train clearance, smooth grade transitions, projected landmark readability through the existing cab windscreen, and the instance/batch budget.
 

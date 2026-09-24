@@ -46,11 +46,13 @@ function makePlates(plates: Plate[]) {
  plates.forEach((plate, i) => {
   const row=i*160;
   ctx.fillStyle=plate.color;ctx.fillRect(0,row,1024,160);
+  ctx.fillStyle='rgba(6,18,25,.24)';ctx.fillRect(0,row,1024,153);
   ctx.fillStyle='#d5b878';ctx.fillRect(0,row+153,1024,7);
   ctx.textAlign='center';ctx.fillStyle='#fff5df';
   let fontSize=70;
   do {ctx.font=`600 ${fontSize--}px Arial, sans-serif`;} while(ctx.measureText(plate.text).width>958&&fontSize>20);
-  ctx.fillText(plate.text,512,row+91);
+  ctx.shadowColor='#10191e';ctx.shadowBlur=3;ctx.shadowOffsetY=2;
+  ctx.fillText(plate.text,512,row+91);ctx.shadowBlur=0;ctx.shadowOffsetY=0;
   ctx.font='24px Arial, sans-serif';ctx.fillStyle='#c9d7d1';ctx.fillText(plate.sub,512,row+132,955);
   const [x,y,z]=plate.p,w=plate.width,h=w*160/1024,v=vertices.length/3;
   vertices.push(x-w/2,y-h/2,z, x+w/2,y-h/2,z, x+w/2,y+h/2,z, x-w/2,y+h/2,z);

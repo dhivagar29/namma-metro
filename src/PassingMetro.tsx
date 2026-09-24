@@ -3,6 +3,7 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { Blocks, type Block, type V3 } from './geometry';
 import type { Simulation } from './simulation';
+import { passingMetro } from './liveliness';
 // A six-car eastbound service gives the adjacent track a recognizable Purple silhouette.
 export const PassingMetro = memo(function PassingMetro({ simulation }: { simulation: MutableRefObject<Simulation> }) {
  const train=useRef<THREE.Group>(null);
@@ -33,7 +34,8 @@ export const PassingMetro = memo(function PassingMetro({ simulation }: { simulat
  },[]);
  useFrame(()=>{
   const s=simulation.current;
-  if(train.current)train.current.position.z=((s.elapsed*17+s.position+460)%3400)-570;
+  const pass=passingMetro(s);
+  if(train.current){train.current.position.z=pass.z;train.current.visible=pass.visible;}
  });
- return <group ref={train} position={[-4.2,0,-110]}><Blocks items={blocks}/>{[-.94,.94].map(x=><mesh key={x} position={[x,1.25,10.1]}><circleGeometry args={[.12,12]}/><meshBasicMaterial color="#fff5ca"/></mesh>)}</group>;
+ return <group ref={train} position={[-4.2,0,-630]}><Blocks items={blocks}/>{[-.94,.94].map(x=><mesh key={x} position={[x,1.25,10.1]}><circleGeometry args={[.16,12]}/><meshBasicMaterial color="#fff5ca" toneMapped={false}/></mesh>)}</group>;
 });

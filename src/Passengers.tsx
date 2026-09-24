@@ -1,8 +1,9 @@
 import { memo, useCallback, useLayoutEffect, useMemo, useRef, type MutableRefObject } from 'react';
 import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
-import { DWELL, type Simulation } from './simulation';
+import { boardingProgress, type Simulation } from './simulation';
 import type { V3 } from './geometry';
+import { stationPosition } from './routes';
 
 type Shape = 'round' | 'taper' | 'cloth' | 'detail' | 'drape';
 type Joint = 'body' | 'leftLeg' | 'leftShin' | 'rightLeg' | 'rightShin' | 'leftArm' | 'leftForearm' | 'rightArm' | 'rightForearm';
@@ -15,6 +16,7 @@ const SHAPES: Shape[] = ['round', 'taper', 'cloth', 'detail', 'drape'];
 const JOINTS: Joint[] = ['body', 'leftLeg', 'leftShin', 'rightLeg', 'rightShin', 'leftArm', 'leftForearm', 'rightArm', 'rightForearm'];
 const SKIN = ['#70452f', '#8c5639', '#a56c48', '#bd855e', '#654334', '#98603e'];
 const CLOTHES = ['#317c79', '#b45262', '#c19143', '#546c9d', '#e0c9a1', '#78475e', '#789382', '#b36442'];
+export const CROWD_CAP = 32;
 const INK = '#242a35', HAIR = '#25201f', GOLD = '#d4af65';
 const smooth = (t: number) => t * t * (3 - 2 * t);
 
@@ -40,7 +42,7 @@ export function makeCrowd(index: number) {
  const counts: Record<Shape, number> = { round: 0, taper: 0, cloth: 0, detail: 0, drape: 0 };
  const travelers: Traveler[] = [];
  const dummy = new THREE.Object3D();
- for (let i = 0; i < 32; i++) {
+ for (let i = 0; i < CROWD_CAP; i++) {
   const seed = i + index * 7, outfit = seed % 6, saree = outfit === 0, kurta = outfit === 1 || outfit === 4;
   const skin = SKIN[(seed * 5 + Math.floor(seed / 6)) % SKIN.length], shirt = CLOTHES[(seed * 3 + Math.floor(seed / 6)) % CLOTHES.length];
   const accent = saree ? GOLD : CLOTHES[(seed * 3 + 3) % CLOTHES.length];
@@ -59,7 +61,7 @@ export function makeCrowd(index: number) {
    // Waiting travelers face partly toward the arriving cab; they stay visible
    // throughout dwell, including after the boarding queue has entered the train.
    doorZ, facing: waitingAhead ? -.45 + (i % 3) * .3 : opposite ? Math.PI / 2 - .2 : -Math.PI / 2 + (i % 3 - 1) * .22,
-   height: .94 + (seed % 5) * .035, width: .92 + (seed % 4) * .055,
+   height: .92 + (seed % 6) * .036, width: .88 + (seed % 5) * .06,
    delay: row * .32 + (lane % 3) * .1, phase: seed * 1.71,
   };
   const add = (shape: Shape, p: V3, s: V3, color: string, joint: Joint = 'body', r: V3 = [0,0,0]) => {
@@ -68,10 +70,10 @@ export function makeCrowd(index: number) {
   };
   // Adult proportions: shaped shoulders/waist, neck, oval face, ears and a small nose.
   add('taper', [0,1.185,0], [.215,.45,.135], shirt);
-  add('round', [0,1.37,0], [.22,.095,.137], shirt);
+  add('round', [0,1.37,0], [seed % 3 === 0 ? .24 : .21,.095,.137], shirt);
   add('taper', [0,1.455,0], [.058,.13,.059], skin);
   add('round', [0,1.615,.012], [.116,.157,.105], skin);
-  add('round', [0,1.696,-.017], [.12,.09,.106], HAIR);
+  add('round', [0,1.696,-.017], [.12,seed % 4 === 0 ? .065 : .1,.106], seed % 9 === 0 ? '#827e73' : HAIR);
   add('round', [0,1.625,.115], [.025,.035,.035], skin);
   for (const side of [-1,1]) {
    add('round', [side*.113,1.61,.002], [.025,.043,.027], skin);
@@ -129,7 +131,7 @@ export function makeCrowd(index: number) {
    add('round', [0,1.065,-.298], [.12,.105,.031], '#59636a');
    for (const side of [-1,1]) add('detail', [side*.144,1.225,.126], [.033,.37,.03], '#30393d', 'body', [0,0,side*-.1]);
   } else {
-   add('cloth', [.26,.88,-.015], [.09,.28,.16], '#985e3f');
+   add('cloth', [.26,seed % 2 ? .82 : .88,-.015], [.09,seed % 2 ? .39 : .28,.16], seed % 2 ? '#c5b594' : '#985e3f');
    add('detail', [.206,1.16,0], [.025,.5,.028], '#5a4034', 'body', [0,0,.12]);
   }
   travelers.push(traveler);
@@ -151,17 +153,17 @@ export const Passengers = memo(function Passengers({ index, simulation }: { inde
  const pose = useCallback((elapsed: number, dwell: number, boarding: boolean, departed: boolean) => {
   const { root, joint, matrix, bones } = scratch;
   for (const traveler of crowd.travelers) {
-   const progress = traveler.boarder && boarding ? THREE.MathUtils.clamp((dwell - traveler.delay) / (DWELL - 1.05), 0, 1) : 0;
+   const progress = traveler.boarder && boarding ? boardingProgress(dwell, traveler.delay) : 0;
    const hidden = traveler.boarder && (departed || progress >= 1);
    // Walk along the platform first, then turn across the threshold behind the cab.
    const along = smooth(Math.min(1, progress / .68)), across = smooth(Math.max(0, (progress - .55) / .45));
-   const x = THREE.MathUtils.lerp(traveler.x, 1.92, across), z = THREE.MathUtils.lerp(traveler.z, traveler.doorZ, along);
+   const x = THREE.MathUtils.lerp(traveler.x, 1.48, across), z = THREE.MathUtils.lerp(traveler.z, traveler.doorZ, along);
    const distance = Math.abs(z - traveler.z) + Math.abs(x - traveler.x);
    const walking = progress > 0 && progress < 1 ? Math.sin(Math.min(1, progress * 8) * Math.PI / 2) : 0;
    const stride = Math.sin(distance * 9) * .43 * walking;
    const idle = Math.sin(elapsed * 1.25 + traveler.phase) * .012;
    const alongT = Math.min(1, progress / .68), acrossT = Math.max(0, (progress - .55) / .45);
-   const dx = (1.92 - traveler.x) * 6 * acrossT * (1 - acrossT) / .45;
+   const dx = (1.48 - traveler.x) * 6 * acrossT * (1 - acrossT) / .45;
    const dz = (traveler.doorZ - traveler.z) * 6 * alongT * (1 - alongT) / .68;
    const heading = progress >= .68 ? -Math.PI / 2 : Math.atan2(dx, dz);
    const yaw = THREE.MathUtils.lerp(traveler.facing, heading, smooth(Math.min(1, progress / .12)));
@@ -180,7 +182,7 @@ export const Passengers = memo(function Passengers({ index, simulation }: { inde
     bone(leg, 'body', [side*.095,.83,0], step);
     bone(shin, leg, [0,-.38,0], Math.max(0,-step) * .8);
     bone(arm, 'body', [side*.224,1.355,0], -step * .65 + idle, side*.075);
-    bone(forearm, arm, [0,-.265,0], traveler.phone && side === 1 ? -1.35 + walking*.22 : -.12);
+    bone(forearm, arm, [0,-.265,0], traveler.phone && side === 1 ? -1.35 + walking*.85 : -.12);
    }
    for (const part of traveler.parts) {
     matrix.multiplyMatrices(bones[part.joint], part.matrix);
@@ -210,7 +212,8 @@ export const Passengers = memo(function Passengers({ index, simulation }: { inde
  useFrame(() => {
   const s = simulation.current;
   // Simulation time freezes with pause; upload at 30 Hz instead of every render.
-  const tick = `${Math.floor(s.elapsed * 30)}:${s.target}:${s.doors}:${s.stops}:${Math.floor(s.dwell * 30)}`;
+  const hz = Math.abs(s.position - stationPosition(index)) < 150 ? 30 : 10;
+  const tick = `${Math.floor(s.elapsed * hz)}:${s.target}:${s.doors}:${s.stops}:${Math.floor(s.dwell * hz)}`;
   if (last.current === tick) return;
   last.current = tick;
   pose(s.elapsed, s.dwell, s.target === index && s.doors, s.stops > index);

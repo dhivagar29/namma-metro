@@ -56,7 +56,7 @@ test('boarding locks traction and door closing until dwell completes; cannot far
 });
 test('power, coast, service brake, emergency brake and speed cap use continuous physics', () => {
  let state = tick(toggleDoors(tick(initialState(), 'coast', 6)), 'coast', 3);
- state = tick(state, 'power', 10); assert.ok(state.speed > 8 && state.position > 38);
+ state = tick(state, 'power', 10); assert.ok(state.speed > 7.5 && state.speed < 8.3 && state.position > 35);
  const coast = tick(state, 'coast', 1), brake = tick(state, 'brake', 1), emergency = tick(state, 'emergency', 1);
  assert.ok(coast.speed < state.speed && coast.speed > brake.speed && brake.speed > emergency.speed);
  assert.equal(tick(state, 'brake', 15).speed, 0);

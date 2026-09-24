@@ -3,7 +3,8 @@ import { useFrame } from '@react-three/fiber';
 import * as THREE from 'three';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
 import { Blocks, Box, type Block, type V3 } from './geometry';
-import type { Control, Simulation } from './simulation';
+import { tractionBlock, tractionLoad, brakeLoad, type Control, type Simulation } from './simulation';
+import { cabMotion, passingMetro } from './liveliness';
 
 // Original mesh work inspired by the Tyne & Wear and Tokyo 05R cab references.
 // Cab coordinates stay fixed: the seated camera is at [0, 2.8, 3], looking -Z.
@@ -133,6 +134,10 @@ export const Cab = memo(function Cab({ simulation, control }: { simulation: Muta
  const lever = useRef<THREE.Group>(null), speedNeedle = useRef<THREE.Group>(null), effortNeedle = useRef<THREE.Group>(null);
  const doorLamp = useRef<THREE.MeshBasicMaterial>(null), tripLamp = useRef<THREE.MeshBasicMaterial>(null);
  const tractionLamp = useRef<THREE.MeshBasicMaterial>(null), screenDoors = useRef<THREE.MeshBasicMaterial>(null);
+ const fill = useRef<THREE.PointLight>(null);
+ const panel = useRef<THREE.Group>(null), brakeLamp = useRef<THREE.MeshBasicMaterial>(null);
+ const notchLamps = useRef<Array<THREE.MeshBasicMaterial | null>>([]);
+ const lampColors = useMemo(() => ({ off: new THREE.Color('#263e3b'), power: new THREE.Color('#a3e9cb'), brake: new THREE.Color('#f2b772') }), []);
  const assets = useMemo(() => {
   const canvas = document.createElement('canvas'); canvas.width = canvas.height = 128;
   const ctx = canvas.getContext('2d')!, pixels = ctx.createImageData(128, 128);
@@ -164,18 +169,31 @@ export const Cab = memo(function Cab({ simulation, control }: { simulation: Muta
  }, []);
  useFrame((_, dt) => {
   const s = simulation.current, drive = control.current, unlocked = s.doors || s.closing > 0;
+  const blocked = tractionBlock(s), load = tractionLoad(s,drive), braking = brakeLoad(s,drive);
+  const pulse = .7 + .3 * Math.sin(s.elapsed * 7);
+  if(fill.current)fill.current.intensity=2.1+passingMetro(s).light*1.3;
+  if(panel.current)panel.current.position.y=cabMotion(s,drive).panel;
   // Preserve the existing power/coast/brake wiring and smooth mechanical travel.
-  if (lever.current) lever.current.rotation.x = THREE.MathUtils.damp(lever.current.rotation.x, drive === 'power' ? -.35 : drive === 'coast' ? 0 : .35, 8, dt);
+  if (lever.current) lever.current.rotation.x = THREE.MathUtils.damp(lever.current.rotation.x, drive === 'power' ? -.35 : drive === 'coast' ? 0 : drive === 'emergency' ? .5 : .35, 8, dt);
   if (doorLamp.current) doorLamp.current.color.set(unlocked ? '#ffb641' : '#8adf9b');
   if (tripLamp.current) tripLamp.current.color.set(s.atp || drive === 'emergency' ? '#ff8956' : '#284b3b');
-  if (tractionLamp.current) tractionLamp.current.color.set(!unlocked && !s.atp && !s.complete && drive === 'power' ? '#a3e9cb' : '#263e3b');
+  if (tractionLamp.current) {
+   tractionLamp.current.color.copy(lampColors.off).lerp(lampColors.power,load);
+   if(drive==='power' && blocked)tractionLamp.current.color.copy(lampColors.brake).multiplyScalar(pulse);
+  }
+  if(brakeLamp.current)brakeLamp.current.color.copy(lampColors.off).lerp(lampColors.brake,braking);
+  notchLamps.current.forEach((lamp,i)=>{
+   if(!lamp)return;
+   const selected=i===0?drive==='power':i===1?drive==='coast':drive==='brake'||drive==='emergency';
+   lamp.color.set(selected?(i===0&&blocked?'#f2b772':i===2?'#f2b772':'#b2e4c5'):'#263e3b');
+  });
   if (screenDoors.current) screenDoors.current.color.set(unlocked ? '#eeb358' : '#80c8a1');
   if (speedNeedle.current) speedNeedle.current.rotation.z = (135 - THREE.MathUtils.clamp(s.speed * 3.6 / 100, 0, 1) * 270) * Math.PI / 180;
   if (effortNeedle.current) effortNeedle.current.rotation.z = (135 - THREE.MathUtils.clamp((s.acceleration + 3) / 4, 0, 1) * 270) * Math.PI / 180;
  });
  return <group name="driver-cab">
   {/* Soft local fill falls off before the platform; no shadow/postprocessing cost. */}
-  <pointLight position={[0, 3.7, 1.15]} color="#dce9df" intensity={2.1} distance={4.5} decay={2}/>
+  <pointLight ref={fill} position={[0, 3.7, 1.15]} color="#dce9df" intensity={2.1} distance={4.5} decay={2}/>
   <Housing p={[0, 4.31, .48]} s={[4.9, .46, 1.18]} color="#b6b9af" radius={.1}/>
   <Housing p={[0, 4.08, .1]} s={[4.38, .15, .21]} color="#202b2e" radius={.04}/>
   <Housing p={[0, 4.018, .216]} s={[4.34, .025, .027]} color="#74498d" radius={.009}/>
@@ -189,6 +207,7 @@ export const Cab = memo(function Cab({ simulation, control }: { simulation: Muta
   </group>)}
   {/* Raised into the visible band above the unchanged 20dvh HTML desk. */}
   {/* Deep continuous molded worktop, rounded wrist edge and separate sloped fascia. */}
+  <group ref={panel} name="cab-panel-suspension">
   <Housing p={[0, 1.525, .38]} s={[4.74, .55, 1.77]} color="#555f5a" radius={.12}/>
   <Housing p={[0, 1.78, .35]} s={[4.7, .16, 1.78]} color="#354240" radius={.075} rubber={rubber}/>
   <Housing p={[0, 1.805, 1.18]} s={[4.53, .13, .15]} color="#202d2e" radius={.058} rubber={rubber}/>
@@ -244,7 +263,11 @@ export const Cab = memo(function Cab({ simulation, control }: { simulation: Muta
   <Housing p={[1.31, 1.88, .66]} s={[.52, .07, .76]} color="#1b292d" radius={.035}/>
   <Housing p={[1.31, 1.919, .65]} s={[.092, .012, .55]} color="#090f13" radius={.01}/>
   <Legend atlas={atlas} text="MASTER CONTROLLER" p={[1.31, 1.923, .98]} w={.48} h={.073} r={[-Math.PI / 2, 0, 0]}/>
-  {(['P', 'N', 'B'] as const).map((text, i) => <Legend key={text} atlas={atlas} text={text} p={[1.49, 1.923, .46 + i * .19]} w={.08} h={.08} r={[-Math.PI / 2, 0, 0]}/>)}
+  {(['P', 'N', 'B'] as const).map((text, i) => <group key={text}>
+   <Legend atlas={atlas} text={text} p={[1.49, 1.923, .46 + i * .19]} w={.08} h={.08} r={[-Math.PI / 2, 0, 0]}/>
+   <mesh position={[1.565,1.925,.46+i*.19]} rotation={[-Math.PI/2,0,0]}><circleGeometry args={[.017,12]}/><meshBasicMaterial ref={m=>{notchLamps.current[i]=m;}} color="#263e3b" toneMapped={false}/></mesh>
+  </group>)}
+  <mesh position={[1.18,1.927,.91]} rotation={[-Math.PI/2,0,0]}><planeGeometry args={[.13,.025]}/><meshBasicMaterial ref={brakeLamp} color="#263e3b" toneMapped={false}/></mesh>
   <group position={[1.31, 1.93, .65]}>
    <mesh rotation={[0, 0, Math.PI / 2]}><cylinderGeometry args={[.075, .075, .14, 24]}/><meshStandardMaterial color="#222b2d" roughness={.82}/></mesh>
    <group ref={lever} name="master-controller-lever">
@@ -258,6 +281,7 @@ export const Cab = memo(function Cab({ simulation, control }: { simulation: Muta
    <Disc p={[0, 0, .026]} radius={.078} depth={.04} color="#222c2c"/>
    <Disc p={[0, 0, .071]} radius={.105} depth={.06} color="#aa3f34"/>
    <Legend atlas={atlas} text="EMERGENCY" p={[0, -.165, .015]} w={.37} h={.073}/>
+  </group>
   </group>
   {/* Wiper stays parked at the sill; no blade crosses the central track view. */}
   <Disc p={[1.9, 2.32, -.36]} radius={.056} depth={.055} color="#233031"/>

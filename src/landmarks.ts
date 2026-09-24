@@ -254,12 +254,9 @@ export function makeSurface(slice: CorridorSlice): SceneryKit {
     block(k.solid,[side*23,g+1.5,z],[.12,3,.12],'#aeb7a5');
     block(k.solid,[side*23,g+1.6,z-20],[.07,.05,40],'#aeb7a5');
    }
-   if(!yard&&rng()>.2) {
-    const tx=side===1?12:-16;
-    block(k.solid,[tx,g+.7,z],[1.8,1.4,3.6],rng()>.5?'#d0b260':'#a5b6b5');
-    block(k.glass,[tx,g+1.5,z],[1.65,.4,2],'#36575b');
-    block(k.glow,[tx,g+.6,z+1.85],[1.4,.15,.05],'#edd4a1');
-   }
+   // Moving, capped traffic now occupies these roads. Consume the former
+   // parked-car choices so all existing seeded skyline/foliage stays identical.
+   if(!yard&&rng()>.2) rng();
   }
  }
  for(const spec of landmarkPlacements(hop)) if(spec.distance>=start&&spec.distance<end) landmarkKit(k,spec,start);

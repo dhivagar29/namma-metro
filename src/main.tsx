@@ -2,7 +2,7 @@ import { useCallback, useEffect, useRef, useState } from 'react';
 import { createRoot } from 'react-dom/client';
 import World from './World';
 import { stations, kannada, stationType, totalLengthM } from './routes';
-import { distanceToStop, DWELL, initialState, inZone, shouldAnnounce, step, toggleDoors, type Control } from './simulation';
+import { distanceToStop, DWELL, brakeGuide, berthQuality, tractionBlock, initialState, inZone, shouldAnnounce, step, toggleDoors, type Control } from './simulation';
 import { audio } from './audio';
 import './style.css';
 const clock = (seconds:number) => `${Math.floor(seconds/60).toString().padStart(2,'0')}:${Math.floor(seconds%60).toString().padStart(2,'0')}`;
@@ -57,7 +57,10 @@ function App() {
  },[started,paused,view.complete,setDrive]);
  const distance=distanceToStop(view),boarding=view.doors&&!view.serviced,closing=view.closing>0;
  const start=()=>{sim.current=initialState();setView(sim.current);setStarted(true);setPaused(false);setPa(null);announced.current.clear();setDrive('coast');audio.start(sim.current);};
- const status=view.complete?'DUTY COMPLETE':paused?'DUTY PAUSED':closing?'DOORS CLOSING · STAND CLEAR':boarding?'PASSENGERS BOARDING':view.doors?'BOARDING COMPLETE':inZone(view)?'ON MARKER · OPEN DOORS':view.atp?'ATP · STATION PROTECTION':control==='power'?'TRACTION APPLIED':control==='brake'||control==='emergency'?'BRAKING':'COASTING';
+ const blocked=control==='power'?tractionBlock(view):null, berth=view.target>0?berthQuality(view):null;
+ const stopNote=berth==='clean'?'CLEAN STOP':berth==='protected'?'ATP STOP':berth?'BERTH ALIGNED':null;
+ const inhibit=blocked==='closing'?'POWER BLOCKED · CLOSING':blocked==='doors'?'POWER BLOCKED · DOORS':blocked==='atp'?'POWER BLOCKED · ATP':null;
+ const status=view.complete?'DUTY COMPLETE':paused?'DUTY PAUSED':inhibit?inhibit:closing?'DOORS CLOSING · STAND CLEAR':boarding?'PASSENGERS BOARDING':view.doors?'BOARDING COMPLETE':stopNote?`${stopNote} · OPEN DOORS`:view.atp?'ATP · STATION PROTECTION':control==='power'?'TRACTION APPLIED':control==='brake'||control==='emergency'?'BRAKING':'COASTING';
  const doorDisabled=!started||paused||view.complete||closing||(view.doors?!view.serviced:!inZone(view));
  const speed=Math.round(view.speed*3.6);
  return <main>
@@ -66,20 +69,20 @@ function App() {
   <section className="console" aria-label="Driver dashboard">
    <header className="console-top">
     <span className="brand">NAMMA METRO <small lang="kn">ನಮ್ಮ ಮೆಟ್ರೋ</small></span>
-    <span className="console-status">● {status}</span>
+    <span className={`console-status ${inhibit?'amber':''}`}>● {status}</span>
     <div className="header-actions"><button onClick={mute} aria-pressed={muted} aria-label={muted?'Unmute sound':'Mute sound'}>{muted?'Sound off':'Sound on'} <kbd>M</kbd></button><button onClick={()=>setPaused(v=>!v)} disabled={!started||view.complete}>{paused?'Resume':'Pause'} <kbd>ESC</kbd></button></div>
    </header>
    <div className="instruments">
     <div className="speedometer"><div className="eyebrow">SPEED</div><strong>{speed.toString().padStart(2,'0')}<small>km/h</small></strong><div className="speed-bar" role="meter" aria-label="Train speed" aria-valuenow={speed} aria-valuemin={0} aria-valuemax={80}><i style={{width:`${speed/80*100}%`}}/></div><span className="speed-limit">LIMIT 80</span></div>
     <div className="destination"><div className="eyebrow">{view.doors?'AT STATION':'NEXT STATION'} <span>{String(view.target+1).padStart(2,'0')} / 37 · {stationType(view.target)}</span></div><h1 className={stations[view.target].length>32?'long-name':undefined}>{stations[view.target]}</h1><div className="kannada-destination" lang="kn">{kannada[view.target]}</div><div className="trip-stats"><span><b>{view.passengers}</b> boarded</span><span><b>{clock(view.elapsed)}</b> duty</span><span className={view.atp?'amber':'green'}>● ATP {view.atp?'BRAKE':'READY'}</span></div></div>
     <div className={`alignment ${view.atp?'protecting':''}`}>
-     <span className="eyebrow">TO STOP <span className={view.atp?'amber':'green'}>{view.atp?'ATP BRAKE':view.doors||closing?'INTERLOCK':control==='power'?'TRACTION':control==='coast'?'COAST':'BRAKE'}</span></span>
-     <strong>{Math.max(0,Math.round(distance))}<small> m</small></strong>
-     <small>{closing?`${view.closing.toFixed(1)}s · stand clear`:boarding?`${Math.ceil(Math.max(0,DWELL-view.dwell))}s · passenger exchange`:view.doors?'Boarding complete · close doors':inZone(view)?'On marker · open doors':`Brake guide ${Math.ceil(view.speed**2/2.1+view.speed*.6)} m`}</small>
+     <span className="eyebrow">TO STOP <span className={view.atp||blocked?'amber':'green'}>{blocked?'POWER BLOCKED':view.atp?'ATP BRAKE':view.doors||closing?'INTERLOCK':control==='power'?'TRACTION':control==='coast'?'COAST':'BRAKE'}</span></span>
+     <strong>{Math.abs(distance)<10?distance.toFixed(1):Math.round(distance)}<small> m</small></strong>
+     <small>{closing?`${view.closing.toFixed(1)}s · stand clear`:boarding?`${Math.ceil(Math.max(0,DWELL-view.dwell))}s · passenger exchange`:view.doors?'Boarding complete · close doors':berth?`${stopNote} · open doors`:view.speed===0&&distance < -8?'Beyond berth · doors locked':`Brake guide ${brakeGuide(view.speed)} m`}</small>
      <div className="boarding-progress"><i style={{width:`${view.doors?view.dwell/DWELL*100:Math.max(0,Math.min(100,100-distance))}%`}}/></div>
-     <div className="pa-caption" role="status">{pa!==null&&started&&!paused?<>◖ Next: {stations[pa]} <span lang="kn">{kannada[pa]}</span></>:'6 CAR · MANUAL / CAB 01'}</div>
+     <div className="pa-caption" role="status">{pa!==null&&started&&!paused?<>◖ Next: {stations[pa]} <span lang="kn">{kannada[pa]}</span></>:(view.doors&&berth?`${stopNote} · ${Math.abs(distance).toFixed(1)} m ${distance<0?'past':'short'}`:'6 CAR · MANUAL / CAB 01')}</div>
     </div>
-    <div className="door-controls"><div className="lamp-row"><span className={view.doors||closing?'amber':'green'}>● DOORS {closing?'CLOSING':view.doors?'OPEN':'LOCKED'}</span></div><button onClick={doors} disabled={doorDisabled}>{closing?'Stand clear…':boarding?'Boarding…':view.doors?'Close doors':'Open doors'} <kbd>D</kbd></button><small>{closing?'Wait for departure tone':boarding?'Passenger exchange':view.doors?'Ready to close':inZone(view)?'Stopped and aligned':'Doors locked · ready'}</small></div>
+    <div className="door-controls"><div className="lamp-row"><span className={view.doors||closing?'amber':'green'}>● DOORS {closing?'CLOSING':view.doors?'OPEN':'LOCKED'}</span></div><button onClick={doors} disabled={doorDisabled}>{closing?'Stand clear…':boarding?'Boarding…':view.doors?'Close doors':'Open doors'} <kbd>D</kbd></button><small>{closing?'Wait for departure tone':boarding?'Passenger exchange':view.doors?'Ready to close':inZone(view)?'Stopped and aligned':view.speed>0?'Stop within ±8 m':distance>8?'Move up to the marker':'Beyond berth'}</small></div>
     <div className="master-control"><div className="eyebrow">MASTER CONTROLLER <span>HOLD W / S</span></div><div className="notches">{controls.map(value=><button key={value} className={control===value?'selected':''} aria-pressed={control===value} disabled={!started||paused||view.complete} onClick={()=>setDrive(value)}>{value==='brake'?'S / ↓':value==='power'?'W / ↑':'○'}<span>{value}</span></button>)}</div><button aria-label="Emergency brake (Space)" className={`emergency ${control==='emergency'?'engaged':''}`} disabled={!started||paused||view.complete} onClick={()=>setDrive(control==='emergency'?'coast':'emergency')}>● Emergency brake <kbd>SPACE</kbd></button></div>
    </div>
    <aside className="route-card" aria-label="Purple Line route">

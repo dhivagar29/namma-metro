@@ -3,6 +3,8 @@ import { Canvas, useFrame, useThree } from '@react-three/fiber';
 import * as THREE from 'three';
 import { kannada, stations, stationPosition } from './routes';
 import type { Control, Simulation } from './simulation';
+import { cabMotion, dutyLight } from './liveliness';
+import { Traffic } from './Traffic';
 import { Cab } from './Cab';
 import { PassingMetro } from './PassingMetro';
 import { Passengers } from './Passengers';
@@ -114,7 +116,7 @@ const Track = memo(function Track({ simulation }: { simulation:MutableRefObject<
 function Scenery({ simulation, control, paused }: Props) {
  const moving=useRef<THREE.Group>(null); const [chunk,setChunk]=useState(0);
  const {camera,gl,scene}=useThree(); const look=useRef({x:0,y:0,dragging:false});
- const dusk=useMemo(()=>new THREE.Color('#bda49d'),[]), dark=useMemo(()=>new THREE.Color('#101f2a'),[]);
+ const dusk=useMemo(()=>new THREE.Color('#bda49d'),[]), evening=useMemo(()=>new THREE.Color('#9297ab'),[]), skyTarget=useMemo(()=>new THREE.Color(),[]), dark=useMemo(()=>new THREE.Color('#101f2a'),[]);
  const ambient=useRef<THREE.AmbientLight>(null), sky=useRef<THREE.HemisphereLight>(null), sunLight=useRef<THREE.DirectionalLight>(null), sun=useRef<THREE.Mesh>(null), fluorescent=useRef<THREE.PointLight>(null);
  const warm=useMemo(()=>new THREE.Color('#f6d7b7'),[]), cool=useMemo(()=>new THREE.Color('#99c6de'),[]);
  const slices=useMemo(()=>nearbySlices(chunk*CHUNK_M),[chunk]);
@@ -133,16 +135,20 @@ function Scenery({ simulation, control, paused }: Props) {
   if(moving.current) moving.current.position.z=s.position;
   const nextChunk=Math.floor(s.position/CHUNK_M);if(nextChunk!==chunk)setChunk(nextChunk);
   camera.rotation.order='YXZ';camera.rotation.y=THREE.MathUtils.damp(camera.rotation.y,look.current.x,8,dt);
-  camera.rotation.x=THREE.MathUtils.damp(camera.rotation.x,-.035+look.current.y,8,dt);
-  camera.position.y=2.8+(paused?0:Math.sin(s.position*.2)*Math.min(.009,s.speed*.0004));
-  const under=isEnclosed(s.position);(scene.background as THREE.Color).lerp(under?dark:dusk,Math.min(1,dt*2));
-  if(scene.fog instanceof THREE.Fog){scene.fog.color.copy(scene.background as THREE.Color);scene.fog.far=under?160:640;scene.fog.near=under?25:140;}
-  const blend=Math.min(1,dt*4);
-  if(ambient.current){ambient.current.color.lerp(under?cool:warm,blend);ambient.current.intensity=THREE.MathUtils.damp(ambient.current.intensity,under?.85:.95,4,dt);}
-  if(sky.current)sky.current.color.lerp(under?cool:warm,blend);
-  if(sunLight.current)sunLight.current.intensity=THREE.MathUtils.damp(sunLight.current.intensity,under?.1:2.15,4,dt);
-  if(sun.current)sun.current.visible=!under;
-  if(fluorescent.current)fluorescent.current.intensity=under?18:0;
+  const motion=cabMotion(s,control.current), light=dutyLight(s.elapsed);
+  camera.rotation.x=THREE.MathUtils.damp(camera.rotation.x,-.035+look.current.y+motion.pitch,8,dt);
+  camera.rotation.z=THREE.MathUtils.damp(camera.rotation.z,motion.roll,7,dt);
+  camera.position.x=motion.x;camera.position.y=2.8+motion.y;
+  const under=isEnclosed(s.position), frameDt=paused?0:Math.min(dt,.1);
+  skyTarget.copy(dusk).lerp(evening,light.dusk);
+  (scene.background as THREE.Color).lerp(under?dark:skyTarget,1-Math.exp(-frameDt*2.5));
+  if(scene.fog instanceof THREE.Fog){scene.fog.color.copy(scene.background as THREE.Color);scene.fog.far=THREE.MathUtils.damp(scene.fog.far,under?160:640,3,frameDt);scene.fog.near=THREE.MathUtils.damp(scene.fog.near,under?25:140,3,frameDt);}
+  const blend=1-Math.exp(-frameDt*4);
+  if(ambient.current){ambient.current.color.lerp(under?cool:warm,blend);ambient.current.intensity=THREE.MathUtils.damp(ambient.current.intensity,under?.85:light.ambient,4,frameDt);}
+  if(sky.current){sky.current.color.lerp(under?cool:warm,blend);sky.current.intensity=THREE.MathUtils.damp(sky.current.intensity,under?.9:light.sky,4,frameDt);}
+  if(sunLight.current)sunLight.current.intensity=THREE.MathUtils.damp(sunLight.current.intensity,under?.1:light.sun,4,frameDt);
+  if(sun.current){sun.current.visible=!under;sun.current.position.y=78-light.dusk*24;}
+  if(fluorescent.current)fluorescent.current.intensity=THREE.MathUtils.damp(fluorescent.current.intensity,under?18:0,4,frameDt);
  });
  const nearby=stations.map((_,i)=>i).filter(i=>Math.abs(stationPosition(i)-chunk*CHUNK_M)<850);
  return <>
@@ -154,7 +160,7 @@ function Scenery({ simulation, control, paused }: Props) {
   <mesh ref={sun} position={[-145,78,-600]}><sphereGeometry args={[18,24,16]}/><meshBasicMaterial color="#ffd6a0" fog={false}/></mesh>
   <Track simulation={simulation}/>
   <PassingMetro simulation={simulation}/>
-  <group ref={moving}><CorridorAssets>{slices.map(slice=><CorridorChunk key={slice.key} slice={slice}/>)}</CorridorAssets>{billboards.map(board=><Billboard key={board.hopIndex} board={board} paused={paused} source={soldBoardSource(board.hopIndex)}/>)}{nearby.map(index=><Station key={index} index={index} simulation={simulation}/>)}</group>
+  <group ref={moving}><Traffic simulation={simulation}/><CorridorAssets>{slices.map(slice=><CorridorChunk key={slice.key} slice={slice}/>)}</CorridorAssets>{billboards.map(board=><Billboard key={board.hopIndex} board={board} paused={paused} source={soldBoardSource(board.hopIndex)}/>)}{nearby.map(index=><Station key={index} index={index} simulation={simulation}/>)}</group>
   <Cab simulation={simulation} control={control}/>
  </>;
 }
