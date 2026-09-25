@@ -20,7 +20,7 @@ const { corridor, hopAt, nearbySlices, groundHeight, isUnderground, isEnclosed, 
 const { LANDMARKS, landmarkPlacements, makeSurface, makeTunnel } = load('landmarks');
 const sliceFor = hop => ({ key:`test:${hop.i}`,hop,start:hop.start,end:hop.end,tunnel:hop.layout==='underground' });
 function meshesFor(kit, start) {
- const geometries={solid:new THREE.BoxGeometry(),foliage:new THREE.IcosahedronGeometry(1,1),round:new THREE.SphereGeometry(1,16,10)};
+ const geometries={solid:new THREE.BoxGeometry(),concrete:new THREE.BoxGeometry(),steel:new THREE.BoxGeometry(),foliage:new THREE.IcosahedronGeometry(1,1),round:new THREE.SphereGeometry(1,16,10)};
  const material=new THREE.MeshBasicMaterial({side:THREE.DoubleSide});
  const meshes=Object.entries(geometries).filter(([key])=>kit[key].length).map(([key,geometry])=>{
   const items=kit[key],mesh=new THREE.InstancedMesh(geometry,material,items.length),obj=new THREE.Object3D();
@@ -84,7 +84,7 @@ test('all 29 elevated hops have different physical scenery, not only different l
  const signatures=new Set();
  for(const hop of corridor.filter(h=>h.layout==='elevated')) {
   const kit=makeSurface(sliceFor(hop));
-  const physical=JSON.stringify([kit.solid,kit.glass,kit.foliage,kit.round]);
+  const physical=JSON.stringify([kit.solid,kit.concrete,kit.steel,kit.glass,kit.foliage,kit.round]);
   assert.ok(!signatures.has(physical),`duplicate scenery at hop ${hop.i}`);signatures.add(physical);
   assert.equal(kit.plates.length,hop.tags.length);
  }

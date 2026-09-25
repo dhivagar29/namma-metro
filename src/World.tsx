@@ -8,7 +8,7 @@ import { Traffic } from './Traffic';
 import { Cab } from './Cab';
 import { PassingMetro } from './PassingMetro';
 import { Passengers } from './Passengers';
-import { Blocks, Box, type Block, type V3 } from './geometry';
+import { Blocks, type Block, type V3 } from './geometry';
 import { CHUNK_M, isEnclosed, nearbySlices } from './corridor';
 import { CorridorAssets, CorridorChunk } from './CorridorChunk';
 import { Billboard } from './Billboard';
@@ -92,27 +92,6 @@ const Station = memo(function Station({ index, simulation }: { index: number; si
   <Passengers index={index} simulation={simulation}/>
  </group>;
 });
-const Track = memo(function Track({ simulation }: { simulation:MutableRefObject<Simulation> }) {
- const moving=useRef<THREE.Group>(null);
- const sleepers=useMemo(()=>{
-  const list:Block[]=[];
-  for(let z=25;z>-565;z-=.8) for(const center of [0,-4.2]) list.push({p:[center,.005,z],s:[2.2,.14,.22],color:'#7c817c'});
-  return list;
- },[]);
- useFrame(()=>{if(moving.current) moving.current.position.z=simulation.current.position%.8;});
- return <>
-  <Box p={[-2.1,-.65,-240]} s={[10.4,.8,650]} color="#8c938f"/>
-  <Box p={[-2.1,-.17,-240]} s={[9.6,.2,650]} color="#515d60"/>
-  {[-6.9,2.8].map(x=><Box key={x} p={[x,.32,-240]} s={[.27,.85,650]} color="#b1b4a6"/>)}
-  {[0,-4.2].flatMap(center=>[-.7175,.7175].map(x=><group key={center+x}>
-   <Box p={[center+x,.12,-240]} s={[.075,.17,650]} color="#555f63"/>
-   <mesh position={[center+x,.21,-240]}><boxGeometry args={[.075,.035,650]}/><meshStandardMaterial color="#d7dbd5" metalness={.85} roughness={.28}/></mesh>
-  </group>))}
-  <group ref={moving}><Blocks items={sleepers}/></group>
-  <Box p={[0,5.7,-240]} s={[.013,.013,650]} color="#405661"/>
-  <Box p={[-4.2,5.7,-240]} s={[.013,.013,650]} color="#405661"/>
- </>;
-});
 function Scenery({ simulation, control, paused }: Props) {
  const moving=useRef<THREE.Group>(null); const [chunk,setChunk]=useState(0);
  const {camera,gl,scene}=useThree(); const look=useRef({x:0,y:0,dragging:false});
@@ -158,7 +137,6 @@ function Scenery({ simulation, control, paused }: Props) {
   <directionalLight ref={sunLight} position={[-25,40,-120]} intensity={2.15} color="#ffc78e"/>
   <pointLight ref={fluorescent} position={[0,4,-16]} color="#acd9ed" intensity={0} distance={55} decay={1.2}/>
   <mesh ref={sun} position={[-145,78,-600]}><sphereGeometry args={[18,24,16]}/><meshBasicMaterial color="#ffd6a0" fog={false}/></mesh>
-  <Track simulation={simulation}/>
   <PassingMetro simulation={simulation}/>
   <group ref={moving}><Traffic simulation={simulation}/><CorridorAssets>{slices.map(slice=><CorridorChunk key={slice.key} slice={slice}/>)}</CorridorAssets>{billboards.map(board=><Billboard key={board.hopIndex} board={board} paused={paused} source={soldBoardSource(board.hopIndex)}/>)}{nearby.map(index=><Station key={index} index={index} simulation={simulation}/>)}</group>
   <Cab simulation={simulation} control={control}/>

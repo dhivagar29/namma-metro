@@ -3,20 +3,26 @@ import * as THREE from 'three';
 import type { Block } from './geometry';
 import type { CorridorSlice } from './corridor';
 import { makeSurface, makeTunnel, type Plate } from './landmarks';
+import { BOX_SLOTS, ENV_FINISHES } from './environment';
+import { createMineralTexture, mineralMaterial } from './environment-materials';
 
-function createAssets() {
+export function createCorridorAssets() {
+ const mineral = createMineralTexture();
  return {
+  mineral,
   box: new THREE.BoxGeometry(), canopy: new THREE.IcosahedronGeometry(1, 1), round: new THREE.SphereGeometry(1, 16, 10),
-  solid: new THREE.MeshStandardMaterial({ roughness: .87, metalness: .04 }),
-  glass: new THREE.MeshStandardMaterial({ roughness: .25, metalness: .55 }),
+  solid: mineralMaterial(ENV_FINISHES.solid, mineral),
+  concrete: mineralMaterial(ENV_FINISHES.concrete, mineral),
+  steel: new THREE.MeshStandardMaterial(ENV_FINISHES.steel),
+  glass: new THREE.MeshStandardMaterial(ENV_FINISHES.glass),
   glow: new THREE.MeshBasicMaterial({ toneMapped: false }),
-  foliage: new THREE.MeshStandardMaterial({ roughness: 1 }),
+  foliage: new THREE.MeshStandardMaterial(ENV_FINISHES.foliage),
  };
 }
-type Assets = ReturnType<typeof createAssets>;
+type Assets = ReturnType<typeof createCorridorAssets>;
 const AssetsContext = createContext<Assets | null>(null);
 export function CorridorAssets({ children }: { children: ReactNode }) {
- const assets = useMemo(createAssets, []);
+ const assets = useMemo(createCorridorAssets, []);
  useEffect(() => () => Object.values(assets).forEach(asset => asset.dispose()), [assets]);
  return <AssetsContext.Provider value={assets}>{children}</AssetsContext.Provider>;
 }
@@ -76,9 +82,7 @@ export const CorridorChunk = memo(function CorridorChunk({ slice }: { slice: Cor
  const assets=useContext(AssetsContext)!;
  const kit=useMemo(()=>slice.tunnel?makeTunnel(slice):makeSurface(slice),[slice]);
  return <group name={`corridor:${slice.key}:${slice.tunnel?'tunnel':slice.hop.layout}`} position={[0,0,-slice.start]}>
-  {kit.solid.length>0&&<Instances items={kit.solid} geometry={assets.box} material={assets.solid}/>}
-  {kit.glass.length>0&&<Instances items={kit.glass} geometry={assets.box} material={assets.glass}/>}
-  {kit.glow.length>0&&<Instances items={kit.glow} geometry={assets.box} material={assets.glow}/>}
+  {BOX_SLOTS.map(slot=>kit[slot].length>0&&<Instances key={slot} items={kit[slot]} geometry={assets.box} material={assets[slot]}/>)}
   {kit.foliage.length>0&&<Instances items={kit.foliage} geometry={assets.canopy} material={assets.foliage}/>}
   {kit.round.length>0&&<Instances items={kit.round} geometry={assets.round} material={assets.solid}/>}
   {kit.plates.length>0&&<Plates items={kit.plates}/>}
